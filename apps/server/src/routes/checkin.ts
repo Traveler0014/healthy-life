@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import {
   classifyNight,
   currentCheckinDay,
+  isNightHour,
   wallClock,
   type WallClock,
 } from '@healthy-life/shared';
-import { getCheckin, getGroupById, updateMember, upsertCheckin } from '@healthy-life/db';
+import { getCheckin, getGroupById, setCheckinCustomLabel, updateMember, upsertCheckin } from '@healthy-life/db';
 import { earlyCheckinMessage, lateCheckinMessage } from '@healthy-life/notify';
 import type { AppDeps, Env } from '../types';
 
@@ -67,7 +68,10 @@ export function checkinRoutes(deps: AppDeps): Hono<Env> {
         ? earlyCheckinMessage(member.nickname, time)
         : lateCheckinMessage(member.nickname, time, Math.max(0, minutesBetween(member.targetBedtime, wc)));
 
-    return c.json({ checkin, outcome, message });
+    // 白天打卡（05:00-20:00）→ 前端弹窗让用户自选状态标签
+    const isDaytimeCheckin = !isNightHour(wc.hour);
+
+    return c.json({ checkin, outcome, message, isDaytimeCheckin });
   });
 
   router.get('/checkin/today', (c) => {
@@ -85,6 +89,27 @@ export function checkinRoutes(deps: AppDeps): Hono<Env> {
     });
 
     return c.json({ date, checkedIn: Boolean(checkin), checkin: checkin ?? null, outcome });
+  });
+
+  // 设置白天打卡的自定义状态标签
+  router.patch('/checkin/label', async (c) => {
+    const member = c.get('member');
+    const group = getGroupById(deps.db, member.groupId);
+    if (!group) return c.json({ error: 'group not found' }, 404);
+
+    const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+    const date =
+      typeof body?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : '';
+    if (!date) return c.json({ error: 'date is required (YYYY-MM-DD)' }, 400);
+
+    const rawLabel = body?.label;
+    const label =
+      typeof rawLabel === 'string' && rawLabel.trim() !== '' ? rawLabel.trim().slice(0, 20) : null;
+
+    const checkin = setCheckinCustomLabel(deps.db, member.id, date, label);
+    if (!checkin) return c.json({ error: 'checkin not found' }, 404);
+
+    return c.json({ checkin });
   });
 
   return router;

@@ -8,6 +8,7 @@ interface CheckinRow {
   date: string;
   checked_in_at: string;
   timezone: string;
+  custom_label: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +20,7 @@ function toCheckin(r: CheckinRow): Checkin {
     date: r.date,
     checkedInAt: r.checked_in_at,
     timezone: r.timezone,
+    customLabel: r.custom_label ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -55,6 +57,21 @@ export function getCheckin(db: Db, memberId: string, date: string): Checkin | un
     date,
   ) as CheckinRow | undefined;
   return row ? toCheckin(row) : undefined;
+}
+
+/** 设置某次打卡的自定义状态标签（白天打卡用，null = 用默认） */
+export function setCheckinCustomLabel(
+  db: Db,
+  memberId: string,
+  date: string,
+  label: string | null,
+): Checkin | undefined {
+  db.prepare(`UPDATE checkins SET custom_label = ? WHERE member_id = ? AND date = ?`).run(
+    label,
+    memberId,
+    date,
+  );
+  return getCheckin(db, memberId, date);
 }
 
 export function listCheckinsForMember(

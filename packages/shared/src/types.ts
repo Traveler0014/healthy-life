@@ -41,6 +41,8 @@ export interface Checkin {
   checkedInAt: string;
   /** 打卡那一刻的设备时区（IANA），用于重判早/晚 */
   timezone: string;
+  /** 白天打卡时，用户自选的睡眠状态标签（如「上夜班中」），null 用默认「白日做梦中」 */
+  customLabel: string | null;
   createdAt: string;
   updatedAt: string;
 }

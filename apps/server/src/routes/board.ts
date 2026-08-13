@@ -48,6 +48,7 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
       let status: BoardStatus = nowIsNight ? 'not-slept' : 'awake';
       let checkedInAtLocal: string | undefined;
       let checkedInAt: string | undefined;
+      let customLabel: string | null | undefined;
 
       if (latest) {
         const sleepUntil =
@@ -57,6 +58,7 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
           status = isNightHour(ciWc.hour) ? 'sleeping' : 'reversed';
           checkedInAtLocal = formatHm(ciWc);
           checkedInAt = latest.checkedInAt;
+          if (status === 'reversed') customLabel = latest.customLabel;
         }
       }
 
@@ -68,6 +70,7 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
         timezone: tz,
         checkedInAt,
         checkedInAtLocal,
+        customLabel,
       };
     });
 

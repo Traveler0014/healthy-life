@@ -14,8 +14,10 @@ export interface Member {
   groupId: string;
   nickname: string;
   emoji: string;
-  /** 'HH:mm'，个人目标就寝时间（群时区） */
+  /** 'HH:mm'，个人目标就寝时间（本地时间锚点） */
   targetBedtime: string;
+  /** 最近一次打卡/加入时的设备时区（IANA） */
+  lastTimezone: string;
   role: Role;
   status: MemberStatus;
   createdAt: string;
@@ -28,6 +30,10 @@ export interface Checkin {
   date: string;
   /** 实际打卡 ISO 时间戳 */
   checkedInAt: string;
+  /** 打卡时的设备时区（IANA） */
+  timezone: string;
+  /** 白天打卡的自定义状态标签，null 用默认 */
+  customLabel: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +54,8 @@ export interface CheckinResponse {
   checkin: Checkin;
   outcome: 'early' | 'late';
   message: string;
+  /** 白天打卡（05:00-20:00）时为 true，前端据此弹窗让用户自选标签 */
+  isDaytimeCheckin: boolean;
 }
 
 export interface TodayResponse {
@@ -70,6 +78,8 @@ export interface BoardEntry {
   checkedInAt?: string;
   /** 已按该成员时区格式化（HH:mm），仅 sleeping/reversed 且 exact 时存在 */
   checkedInAtLocal?: string;
+  /** 白天打卡的自定义标签（reversed 时存在） */
+  customLabel?: string | null;
 }
 
 export interface BoardResponse {
@@ -193,6 +203,8 @@ export const api = {
       method: 'POST',
       body: { timezone: getBrowserTimezone() },
     }),
+  setCheckinLabel: (label: string | null, date: string) =>
+    request<{ checkin: Checkin }>('/checkin/label', { method: 'PATCH', body: { label, date } }),
   today: () => request<TodayResponse>('/checkin/today'),
   board: () => request<BoardResponse>('/board'),
   stats: () => request<StatsResponse>('/stats'),

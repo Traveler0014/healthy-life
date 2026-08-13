@@ -55,3 +55,7 @@ export const SCHEMA_V3 = `
 ALTER TABLE checkins ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai';
 ALTER TABLE members ADD COLUMN last_timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai';
 `;
+
+export const SCHEMA_V4 = `
+ALTER TABLE checkins ADD COLUMN custom_label TEXT;
+`;

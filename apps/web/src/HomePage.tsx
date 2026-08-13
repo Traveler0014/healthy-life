@@ -35,10 +35,12 @@ function outcomeLabel(outcome: Outcome): string {
 
 const STATUS_LABEL: Record<BoardStatus, string> = {
   sleeping: '已打卡',
-  reversed: '白日做梦',
+  reversed: '白日做梦中',
   'not-slept': '还没睡',
   awake: '醒着',
 };
+
+const DAYTIME_LABEL_PRESETS = ['上夜班中', '午睡中', '倒时差中', '补觉中'];
 
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
 export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
@@ -54,6 +56,9 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const checkedInThisSession = useRef(false);
   const visitLogged = useRef(false);
   const [copied, setCopied] = useState(false);
+  const [daytimePrompt, setDaytimePrompt] = useState<{ date: string } | null>(null);
+  const [labelInput, setLabelInput] = useState('');
+  const [savingLabel, setSavingLabel] = useState(false);
 
   async function copyLink() {
     try {
@@ -62,6 +67,20 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // 忽略复制失败（例如非 https 环境）
+    }
+  }
+
+  async function saveDaytimeLabel(label: string | null) {
+    if (!daytimePrompt) return;
+    setSavingLabel(true);
+    try {
+      await api.setCheckinLabel(label, daytimePrompt.date);
+      setDaytimePrompt(null);
+      await loadData();
+    } catch {
+      // 忽略标签保存失败
+    } finally {
+      setSavingLabel(false);
     }
   }
 
@@ -110,6 +129,10 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       const res = await api.checkin();
       setReceipt(res);
       checkedInThisSession.current = true;
+      if (res.isDaytimeCheckin) {
+        setDaytimePrompt({ date: res.checkin.date });
+        setLabelInput('');
+      }
       await loadData();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -222,7 +245,9 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                         )}
                       </>
                     ) : isReversed && exact && m.checkedInAtLocal ? (
-                      <>白日做梦 · {m.checkedInAtLocal}</>
+                      <>
+                        {m.customLabel || '白日做梦中'} · {m.checkedInAtLocal}
+                      </>
                     ) : (
                       STATUS_LABEL[m.status]
                     )}
@@ -249,6 +274,49 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
           </div>
           <p className="hint small">只看你打卡过的夜晚，忘打卡不计入统计。</p>
         </section>
+      )}
+
+      {daytimePrompt && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label="设置睡眠状态">
+            <h2>白天睡觉呀？</h2>
+            <p className="subtitle">给这个状态起个名字，大家看到就不会误会啦～</p>
+            <div className="preset-chips">
+              {DAYTIME_LABEL_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="button chip"
+                  disabled={savingLabel}
+                  onClick={() => saveDaytimeLabel(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              className="label-input"
+              value={labelInput}
+              onChange={(e) => setLabelInput(e.target.value)}
+              placeholder="或自己写一个，比如「通宵值班」"
+              maxLength={20}
+            />
+            <div className="dialog-actions">
+              <button type="button" className="button ghost" onClick={() => setDaytimePrompt(null)}>
+                跳过，用默认
+              </button>
+              <button
+                type="button"
+                className="button primary small"
+                disabled={savingLabel}
+                onClick={() => saveDaytimeLabel(labelInput.trim() || null)}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
