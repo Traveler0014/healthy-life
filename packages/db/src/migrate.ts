@@ -1,9 +1,9 @@
-import type { Database } from 'better-sqlite3';
+import type { Db } from './client';
 import { SCHEMA_V1 } from './schema';
 
 const migrations: { version: number; sql: string }[] = [{ version: 1, sql: SCHEMA_V1 }];
 
-export function migrate(db: Database.Database): void {
+export function migrate(db: Db): void {
   db.exec(
     `CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)`,
   );

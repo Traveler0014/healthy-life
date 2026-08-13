@@ -1,5 +1,5 @@
-import type { Database } from 'better-sqlite3';
 import type { AppConfig, Member } from '@healthy-life/shared';
+import type { Db } from '@healthy-life/db';
 
 export interface Env {
   Variables: { member: Member };
@@ -7,5 +7,5 @@ export interface Env {
 
 export interface AppDeps {
   config: AppConfig;
-  db: Database.Database;
+  db: Db;
 }

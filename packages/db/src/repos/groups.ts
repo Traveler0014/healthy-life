@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { Db } from '../client';
 import { randomUUID } from 'node:crypto';
 import type { Group, GroupVisibility } from '@healthy-life/shared';
 
@@ -23,7 +23,7 @@ function toGroup(r: GroupRow): Group {
 }
 
 export function createGroup(
-  db: Database.Database,
+  db: Db,
   input: { name: string; inviteCode: string; timezone?: string; visibility?: GroupVisibility },
 ): Group {
   const createdAt = new Date().toISOString();
@@ -41,12 +41,12 @@ export function createGroup(
   return getGroupByInviteCode(db, input.inviteCode)!;
 }
 
-export function getGroupById(db: Database.Database, id: string): Group | undefined {
+export function getGroupById(db: Db, id: string): Group | undefined {
   const row = db.prepare(`SELECT * FROM groups WHERE id = ?`).get(id) as GroupRow | undefined;
   return row ? toGroup(row) : undefined;
 }
 
-export function getGroupByInviteCode(db: Database.Database, inviteCode: string): Group | undefined {
+export function getGroupByInviteCode(db: Db, inviteCode: string): Group | undefined {
   const row = db.prepare(`SELECT * FROM groups WHERE invite_code = ?`).get(inviteCode) as
     | GroupRow
     | undefined;

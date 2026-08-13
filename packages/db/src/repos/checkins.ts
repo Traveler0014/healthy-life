@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { Db } from '../client';
 import { randomUUID } from 'node:crypto';
 import type { Checkin } from '@healthy-life/shared';
 
@@ -24,7 +24,7 @@ function toCheckin(r: CheckinRow): Checkin {
 
 /** 幂等写入：同一成员同一打卡日只有一条，重复调用更新打卡时间。 */
 export function upsertCheckin(
-  db: Database.Database,
+  db: Db,
   input: { memberId: string; date: string; checkedInAt: string },
 ): Checkin {
   const now = new Date().toISOString();
@@ -45,7 +45,7 @@ export function upsertCheckin(
   return getCheckin(db, input.memberId, input.date)!;
 }
 
-export function getCheckin(db: Database.Database, memberId: string, date: string): Checkin | undefined {
+export function getCheckin(db: Db, memberId: string, date: string): Checkin | undefined {
   const row = db.prepare(`SELECT * FROM checkins WHERE member_id = ? AND date = ?`).get(
     memberId,
     date,
@@ -54,7 +54,7 @@ export function getCheckin(db: Database.Database, memberId: string, date: string
 }
 
 export function listCheckinsForMember(
-  db: Database.Database,
+  db: Db,
   memberId: string,
   from?: string,
   to?: string,
@@ -70,7 +70,7 @@ export function listCheckinsForMember(
 }
 
 export function listCheckinsForGroup(
-  db: Database.Database,
+  db: Db,
   groupId: string,
   from?: string,
   to?: string,

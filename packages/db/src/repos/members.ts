@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { Db } from '../client';
 import { randomUUID } from 'node:crypto';
 import type { Member, Role } from '@healthy-life/shared';
 
@@ -29,7 +29,7 @@ function toMember(r: MemberRow): Member {
 }
 
 export function createMember(
-  db: Database.Database,
+  db: Db,
   input: {
     groupId: string;
     nickname: string;
@@ -56,26 +56,26 @@ export function createMember(
   return getMemberByTokenHash(db, input.tokenHash)!;
 }
 
-export function getMemberById(db: Database.Database, id: string): Member | undefined {
+export function getMemberById(db: Db, id: string): Member | undefined {
   const row = db.prepare(`SELECT * FROM members WHERE id = ?`).get(id) as MemberRow | undefined;
   return row ? toMember(row) : undefined;
 }
 
-export function getMemberByTokenHash(db: Database.Database, tokenHash: string): Member | undefined {
+export function getMemberByTokenHash(db: Db, tokenHash: string): Member | undefined {
   const row = db.prepare(`SELECT * FROM members WHERE token_hash = ?`).get(tokenHash) as
     | MemberRow
     | undefined;
   return row ? toMember(row) : undefined;
 }
 
-export function listMembers(db: Database.Database, groupId: string): Member[] {
+export function listMembers(db: Db, groupId: string): Member[] {
   const rows = db.prepare(`SELECT * FROM members WHERE group_id = ? ORDER BY created_at`).all(groupId) as
     MemberRow[];
   return rows.map(toMember);
 }
 
 export function updateMember(
-  db: Database.Database,
+  db: Db,
   id: string,
   patch: Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'role' | 'status'>>,
 ): Member | undefined {

@@ -1,7 +1,7 @@
-import type { Database } from 'better-sqlite3';
 import type { AppConfig } from '@healthy-life/shared';
+import type { Db } from '@healthy-life/db';
 
 export interface JobDeps {
   config: AppConfig;
-  db: Database.Database;
+  db: Db;
 }
