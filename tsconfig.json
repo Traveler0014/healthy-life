@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "packages/db" },
+    { "path": "packages/notify" },
+    { "path": "packages/prompts" },
+    { "path": "apps/server" },
+    { "path": "apps/jobs" }
+  ]
+}

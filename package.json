@@ -1,0 +1,20 @@
+{
+  "name": "healthy-life",
+  "version": "0.1.0",
+  "private": true,
+  "description": "朋友早睡互助打卡 — 正反馈驱动的睡眠打卡服务（monorepo）",
+  "packageManager": "pnpm@11.20.0",
+  "scripts": {
+    "build": "tsc -b && pnpm --filter @healthy-life/web build",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "dev:server": "pnpm --filter @healthy-life/server dev",
+    "dev:web": "pnpm --filter @healthy-life/web dev",
+    "dev:jobs": "pnpm --filter @healthy-life/jobs dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

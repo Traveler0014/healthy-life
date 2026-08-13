@@ -1,0 +1,13 @@
+{
+  "name": "@healthy-life/prompts",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

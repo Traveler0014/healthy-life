@@ -1,0 +1,51 @@
+# 06 · 分阶段规划与验收标准
+
+每个阶段按「任务 → 负责包 → 依赖 → 验收标准」列出，方便多 agent 并行认领。
+
+## Phase 0（已完成）：骨架
+
+- ✅ monorepo + 项目引用 + shared/db/notify/prompts/server/web/jobs 骨架
+- ✅ shared 纯逻辑（day/sleep/streak/rewards）+ 单测
+- ✅ 文档契约（本仓库 docs/）
+
+验收：`pnpm install && pnpm build && pnpm test` 全绿。
+
+## Phase 1：核心闭环（MVP）— 目标：能跑通「提醒→打卡→晨报」
+
+| # | 任务 | 包 | 依赖 | 验收 |
+|---|---|---|---|---|
+| 1.1 | join / me / checkin / board / stats 接口 | server | db, shared | 邀请码加入→拿 token→打卡→返回 early/late 回执 |
+| 1.2 | 邀请链接页 + 打卡页（一键按钮 + 回执 + 打卡墙） | web | 1.1 | 手机上「加入→打卡→看到回执与打卡墙」全程 <3 步 |
+| 1.3 | 睡前提醒任务 | jobs | notify | 定时向 reminder topic 推送 |
+| 1.4 | 晨报任务（结算昨晚：早/晚、隐藏 streak、奖励揭示） | jobs | db, shared | 晨报正确汇总，达标时推送奖牌 |
+| 1.5 | 部署到 VPS（systemd + 反代 + HTTPS 或 Cloudflare Tunnel） | ops | 全部 | 朋友可用手机公网访问 + 收到 ntfy |
+
+并行建议：1.1 与 1.3 可并行（都依赖 shared/db/notify 已就绪）；1.2 依赖 1.1；1.4 依赖 1.1 的数据；1.5 最后。
+
+## Phase 2：正反馈增强
+
+| # | 任务 | 包 | 说明 |
+|---|---|---|---|
+| 2.1 | 月报/年报接口 + 页面 | server, web | 早睡占比、趋势、晚睡分布 |
+| 2.2 | 「与自己比」进步指标 | shared, server | 本周平均就寝 vs 上周 |
+| 2.3 | 周期奖励（整月全勤早睡） | shared, jobs | 扩展 rewards |
+| 2.4 | 个性化睡前提醒（按个人目标时间） | jobs, notify | 每人独立 topic/时间 |
+| 2.5 | 奖牌墙 / 成就展示 | web | 已获得奖牌公开可见 |
+
+## Phase 3：睡前思考题打磨
+
+| # | 任务 | 包 | 说明 |
+|---|---|---|---|
+| 3.1 | 扩充题库 + 分类随机 | prompts | 保持「闭眼可解、无压力」 |
+| 3.2 | 「睡不着」入口 + 领取交互 | web, server | 已打卡者可见 |
+| 3.3 | 次日可查看「昨晚那道题的答案」（仅对有答案的题） | web | 无压力、不强制 |
+
+## Phase 4：长周期报告输出
+
+- 导出月度/年度打卡报告（Markdown / 图片卡片），用于群内鼓励大家坚持。
+
+## 认领与协作
+
+- 一次一个 agent 只动一个包；跨包改动先改文档契约。
+- 每完成一项：跑 `pnpm test` + `lsp_diagnostics`，更新本文件勾选。
+- 契约冲突以 docs/05-mechanics.md 为准。
