@@ -57,21 +57,22 @@ export interface TodayResponse {
   outcome: Outcome;
 }
 
+export type BoardStatus = 'sleeping' | 'reversed' | 'not-slept' | 'awake';
+
 export interface BoardEntry {
   memberId: string;
   nickname: string;
   emoji: string;
-  checkedIn: boolean;
+  status: BoardStatus;
   /** 该成员当前时区（IANA） */
   timezone?: string;
   /** 原始打卡 ISO 时间戳（用于相对时间显示） */
   checkedInAt?: string;
-  /** 仅 visibility === 'exact' 且已打卡时存在，已按该成员时区格式化（HH:mm） */
+  /** 已按该成员时区格式化（HH:mm），仅 sleeping/reversed 且 exact 时存在 */
   checkedInAtLocal?: string;
 }
 
 export interface BoardResponse {
-  date: string;
   visibility: 'exact' | 'presence';
   members: BoardEntry[];
 }

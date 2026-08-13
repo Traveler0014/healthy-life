@@ -6,6 +6,7 @@ import {
   getBrowserTimezone,
   timezoneName,
   type BoardResponse,
+  type BoardStatus,
   type CheckinResponse,
   type Member,
   type Outcome,
@@ -31,6 +32,13 @@ function outcomeLabel(outcome: Outcome): string {
   if (outcome === 'late') return '晚睡';
   return '未打卡';
 }
+
+const STATUS_LABEL: Record<BoardStatus, string> = {
+  sleeping: '已打卡',
+  reversed: '白日做梦',
+  'not-slept': '还没睡',
+  awake: '醒着',
+};
 
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
 export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
@@ -189,29 +197,35 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
           <ul className="board">
             {board.members.map((m) => {
               const isDiffTz = Boolean(m.timezone && m.timezone !== viewerTz);
+              const exact = board.visibility === 'exact';
+              const isSleeping = m.status === 'sleeping';
+              const isReversed = m.status === 'reversed';
               return (
-                <li key={m.memberId} className={`board-item ${m.checkedIn ? 'done' : ''}`}>
+                <li
+                  key={m.memberId}
+                  className={`board-item ${isSleeping ? 'done' : ''} ${isReversed ? 'reversed' : ''}`}
+                >
                   <span className="board-emoji">{m.emoji}</span>
                   <span className="board-name">
                     {m.nickname}
                     {m.memberId === me?.id && <em className="me">我</em>}
                   </span>
                   <span className="board-state">
-                    {m.checkedIn
-                      ? board.visibility === 'exact' && m.checkedInAtLocal
-                        ? (
-                            <>
-                              {m.checkedInAtLocal}
-                              {isDiffTz && (
-                                <span className="tz-hint">
-                                  {' '}· {timezoneName(m.timezone!)}
-                                  {m.checkedInAt ? ` · ${formatRelative(m.checkedInAt)}` : ''}
-                                </span>
-                              )}
-                            </>
-                          )
-                        : '已打卡'
-                      : '还没睡'}
+                    {isSleeping && exact && m.checkedInAtLocal ? (
+                      <>
+                        {m.checkedInAtLocal}
+                        {isDiffTz && (
+                          <span className="tz-hint">
+                            {' '}· {timezoneName(m.timezone!)}
+                            {m.checkedInAt ? ` · ${formatRelative(m.checkedInAt)}` : ''}
+                          </span>
+                        )}
+                      </>
+                    ) : isReversed && exact && m.checkedInAtLocal ? (
+                      <>白日做梦 · {m.checkedInAtLocal}</>
+                    ) : (
+                      STATUS_LABEL[m.status]
+                    )}
                   </span>
                 </li>
               );

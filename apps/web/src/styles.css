@@ -423,3 +423,10 @@ h2 {
   font-size: 12px;
   font-weight: 400;
 }
+
+.board-item.reversed {
+  border: 1px solid rgba(242, 192, 122, 0.35);
+}
+.board-item.reversed .board-state {
+  color: var(--late);
+}

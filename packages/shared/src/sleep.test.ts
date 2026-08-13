@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { classifyNight } from './sleep';
+import { classifyNight, isNightHour } from './sleep';
+
+describe('isNightHour', () => {
+  it('20:00-04:59 为夜间', () => {
+    expect(isNightHour(20)).toBe(true);
+    expect(isNightHour(0)).toBe(true);
+    expect(isNightHour(4)).toBe(true);
+    expect(isNightHour(5)).toBe(false);
+    expect(isNightHour(12)).toBe(false);
+    expect(isNightHour(19)).toBe(false);
+  });
+});
 
 describe('classifyNight', () => {
   const tz = 'Asia/Shanghai';
@@ -19,5 +30,9 @@ describe('classifyNight', () => {
   it('equal to target counts as early', () => {
     // 上海 23:00 = UTC 15:00
     expect(classifyNight({ checkedInAt: '2026-01-01T15:00:00Z', targetBedtime: target, timezone: tz })).toBe('early');
+  });
+  it('after-midnight (before day boundary) counts as late', () => {
+    // 上海 02:00 = UTC 前一日 18:00
+    expect(classifyNight({ checkedInAt: '2026-01-01T18:00:00Z', targetBedtime: target, timezone: tz })).toBe('late');
   });
 });
