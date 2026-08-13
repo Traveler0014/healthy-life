@@ -18,6 +18,10 @@ export interface Member {
   targetBedtime: string;
   /** 最近一次打卡/加入时的设备时区（IANA） */
   lastTimezone: string;
+  /** 每成员独立的 ntfy 提醒 topic（随机） */
+  notifyTopic: string;
+  /** 是否开启通知 */
+  notifyEnabled: boolean;
   role: Role;
   status: MemberStatus;
   createdAt: string;
@@ -63,6 +67,8 @@ export interface JoinResponse {
 
 export interface MeResponse {
   member: Member;
+  /** 该成员的 ntfy 订阅链接（打卡页「开启通知」按钮指向它），无 topic 时为 null */
+  notifySubscribeUrl: string | null;
 }
 
 export interface CheckinResponse {
@@ -233,7 +239,7 @@ export const api = {
       body: { ...body, timezone: getBrowserTimezone() },
     }),
   me: () => request<MeResponse>('/me'),
-  updateMe: (patch: { nickname?: string; emoji?: string; targetBedtime?: string }) =>
+  updateMe: (patch: { nickname?: string; emoji?: string; targetBedtime?: string; notifyEnabled?: boolean }) =>
     request<MeResponse>('/me', { method: 'PATCH', body: patch }),
   checkin: () =>
     request<CheckinResponse>('/checkin', {

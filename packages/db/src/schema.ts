@@ -59,3 +59,10 @@ ALTER TABLE members ADD COLUMN last_timezone TEXT NOT NULL DEFAULT 'Asia/Shangha
 export const SCHEMA_V4 = `
 ALTER TABLE checkins ADD COLUMN custom_label TEXT;
 `;
+
+export const SCHEMA_V5 = `
+ALTER TABLE members ADD COLUMN notify_topic TEXT NOT NULL DEFAULT '';
+ALTER TABLE members ADD COLUMN notify_enabled INTEGER NOT NULL DEFAULT 1;
+-- 为存量成员回填随机 topic（不可猜），新成员在 createMember 时生成
+UPDATE members SET notify_topic = 'hl-' || lower(hex(randomblob(8))) WHERE notify_topic = '';
+`;

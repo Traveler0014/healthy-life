@@ -16,8 +16,8 @@
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。新成员一律 `member` |
-| GET | `/api/v1/me` | ✅ 返回当前成员（不含 tokenHash） |
-| PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 |
+| GET | `/api/v1/me` | ✅ 返回 `{ member, notifySubscribeUrl }`；`member` 含 `notifyTopic` / `notifyEnabled`（不含 tokenHash）。`notifySubscribeUrl` = 该成员的 ntfy 订阅链接（`NTFY_BASE_URL/<topic>`） |
+| PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 / `notifyEnabled`（boolean，启用/禁用通知） |
 
 ### 打卡
 

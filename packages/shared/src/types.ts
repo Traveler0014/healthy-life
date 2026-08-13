@@ -27,6 +27,10 @@ export interface Member {
   passwordHash: string;
   /** 口令盐 */
   passwordSalt: string;
+  /** 每成员独立的 ntfy 提醒 topic（随机、不可猜，建号时生成，不随口令轮换变化） */
+  notifyTopic: string;
+  /** 是否开启通知（true=推送，false=服务端跳过） */
+  notifyEnabled: boolean;
   role: Role;
   status: MemberStatus;
   createdAt: string;

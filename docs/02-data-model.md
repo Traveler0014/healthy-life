@@ -26,6 +26,8 @@
 | password_salt | TEXT | 口令盐 |
 | role | TEXT | `admin` / `member` |
 | status | TEXT | `active` / `disabled` |
+| notify_topic | TEXT | 每成员独立的 ntfy 提醒 topic（随机、不可猜，`hl-<hex>`），建号时生成；**不随口令轮换而变化** |
+| notify_enabled | INTEGER | 是否开启通知（0/1，默认 1）；关闭后 jobs 不再向其推送 |
 | created_at | TEXT | ISO |
 
 ## checkins

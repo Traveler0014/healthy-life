@@ -15,6 +15,14 @@ export function hashPassword(password: string, salt: string): string {
 }
 
 /**
+ * 生成每成员独立的 ntfy 提醒 topic（随机、不可猜）。
+ * 用随机值而非从口令派生：topic 不应暴露身份凭证，且要随口令轮换保持稳定。
+ */
+export function generateNotifyTopic(): string {
+  return `hl-${generateToken(8)}`; // 8 字节 → 16 位 hex
+}
+
+/**
  * 从 (群ID + 昵称 + 口令) 确定性派生「打卡链接 token」。
  * 确定性派生 ⇒ 链接稳定不变；服务端只存 sha256(token)，找回时可重算同一条链接。
  */

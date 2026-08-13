@@ -138,6 +138,45 @@ cloudflared tunnel --url http://127.0.0.1:8787
 - **数据备份**：`data/healthy-life.db` 是全部数据（SQLite 单文件），定期复制该文件即可备份。
 - **升级**：`git pull && pnpm install && pnpm build && systemctl restart healthy-server healthy-jobs`。
 
+## 附：Docker 部署（推荐）
+
+`Dockerfile` 把 server 与 jobs 两个常驻进程打包为**同一镜像**，compose 用两个容器共享一个 SQLite 数据卷。相比 systemd 方案，免去手动 `pnpm build` / 配置 node-gyp。
+
+### 镜像与 CI
+
+- 镜像推送到 **GHCR**：`ghcr.io/traveler0014/healthy-life`。
+- GitHub Actions（`.github/workflows/docker-publish.yml`）在 push 到 `main` / 打 `v*` tag / 手动触发时自动构建推送，tag：`latest`（默认分支）、`main`、`v*`、`<sha>`。
+- 首次使用前：到仓库 **Settings → Packages** 把镜像包设为 **Public**（否则拉取需要登录 token）。
+
+### 方式一：拉取 GHCR 镜像（部署机，推荐）
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+cp .env.example .env            # 修改 BASE_URL 为公网 https 地址、NTFY_BASE_URL/NTFY_TOKEN 等
+vim .env
+docker compose pull
+docker compose up -d
+```
+
+### 方式二：本地构建（开发/无外网）
+
+```bash
+cp .env.example .env
+vim .env
+docker compose up -d --build   # 用根目录的 docker-compose.yml（build: .）
+```
+
+### 要点
+
+- **两个容器**：`server`（HTTP :8787）与 `jobs`（cron 提醒/晨报）。`jobs` 用 `depends_on: condition: service_healthy` 等 server 先完成 migrate 与管理员引导，避免首次并发迁移。
+- **数据持久化**：`./data:/app/data`，SQLite（WAL）文件落在宿主机 `data/` 目录，备份即复制该文件。
+- **时区**：compose 里 `TZ` 默认 `Asia/Shanghai`，与 `.env` 的 `TIMEZONE` 保持一致；否则 node-cron 会按容器 UTC 触发，提醒时间会偏。
+- **HTTPS**：容器只暴露 8787，公网 HTTPS 仍按上文「§4 HTTPS」用 Caddy 反代或 Cloudflare Tunnel，把域名指向 `127.0.0.1:8787`。
+- **升级**：`git pull && docker compose pull && docker compose up -d`（镜像版）或 `git pull && docker compose up -d --build`（本地构建版）。
+- **镜像体积**：当前为单阶段构建（镜像内含源码 + node_modules），体积偏大但可靠；若在意体积可后续改成多阶段（copy 各包 `dist/` + 精简 node_modules）。
+
+> 基础镜像刻意选 `node:22-bookworm-slim`（Debian/glibc）而非 Alpine：better-sqlite3 v13 有 glibc 预编译二进制，Debian 上免源码编译。若在 arm64 机器构建并在 amd64 VPS 部署，需加 `--platform linux/amd64`。
+
 ## 附：本地演示
 
 ```bash

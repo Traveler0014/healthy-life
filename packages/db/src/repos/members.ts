@@ -1,6 +1,6 @@
 import type { Db } from '../client';
 import { randomUUID } from 'node:crypto';
-import type { Member, Role } from '@healthy-life/shared';
+import { generateNotifyTopic, type Member, type Role } from '@healthy-life/shared';
 
 interface MemberRow {
   id: string;
@@ -12,6 +12,8 @@ interface MemberRow {
   password_hash: string;
   password_salt: string;
   last_timezone: string;
+  notify_topic: string;
+  notify_enabled: number;
   role: Role;
   status: string;
   created_at: string;
@@ -28,6 +30,8 @@ function toMember(r: MemberRow): Member {
     passwordHash: r.password_hash,
     passwordSalt: r.password_salt,
     lastTimezone: r.last_timezone,
+    notifyTopic: r.notify_topic,
+    notifyEnabled: Boolean(r.notify_enabled),
     role: r.role,
     status: r.status as Member['status'],
     createdAt: r.created_at,
@@ -50,8 +54,8 @@ export function createMember(
 ): Member {
   const createdAt = new Date().toISOString();
   db.prepare(
-    `INSERT INTO members (id, group_id, nickname, emoji, target_bedtime, token_hash, password_hash, password_salt, last_timezone, role, status, created_at)
-     VALUES (@id, @groupId, @nickname, @emoji, @targetBedtime, @tokenHash, @passwordHash, @passwordSalt, @lastTimezone, @role, 'active', @createdAt)`,
+    `INSERT INTO members (id, group_id, nickname, emoji, target_bedtime, token_hash, password_hash, password_salt, last_timezone, notify_topic, notify_enabled, role, status, created_at)
+     VALUES (@id, @groupId, @nickname, @emoji, @targetBedtime, @tokenHash, @passwordHash, @passwordSalt, @lastTimezone, @notifyTopic, @notifyEnabled, @role, 'active', @createdAt)`,
   ).run({
     id: randomUUID(),
     groupId: input.groupId,
@@ -62,6 +66,8 @@ export function createMember(
     passwordHash: input.passwordHash,
     passwordSalt: input.passwordSalt,
     lastTimezone: input.lastTimezone ?? 'Asia/Shanghai',
+    notifyTopic: generateNotifyTopic(),
+    notifyEnabled: 1,
     role: input.role ?? 'member',
     createdAt,
   });
@@ -116,7 +122,9 @@ export function listMembers(db: Db, groupId: string): Member[] {
 export function updateMember(
   db: Db,
   id: string,
-  patch: Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'lastTimezone' | 'role' | 'status'>>,
+  patch: Partial<
+    Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'lastTimezone' | 'notifyEnabled' | 'role' | 'status'>
+  >,
 ): Member | undefined {
   const fields: string[] = [];
   const params: Record<string, unknown> = { id };
@@ -135,6 +143,10 @@ export function updateMember(
   if (patch.lastTimezone !== undefined) {
     fields.push('last_timezone = @lastTimezone');
     params.lastTimezone = patch.lastTimezone;
+  }
+  if (patch.notifyEnabled !== undefined) {
+    fields.push('notify_enabled = @notifyEnabled');
+    params.notifyEnabled = patch.notifyEnabled ? 1 : 0;
   }
   if (patch.role !== undefined) {
     fields.push('role = @role');

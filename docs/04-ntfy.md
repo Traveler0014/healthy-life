@@ -13,10 +13,14 @@ ntfy 是**单向推送**（服务端 → 成员手机），负责：
 
 | topic | 用途 | 订阅者 |
 |---|---|---|
-| `{reminder}`（默认 `healthy-life-reminder`） | 睡前提醒 | 全员 |
-| `{report}`（默认 `healthy-life-report`） | 晨报 / 奖励揭示 | 全员 |
+| `{member.notify_topic}`（每成员独立，`hl-<hex>`） | 睡前提醒（逐人推送） | 该成员本人 |
+| `{report}`（默认 `healthy-life-report`） | 晨报 / 奖励揭示 | 全员（暂未个性化） |
 
-可选（Phase 2）：按个人目标时间做**个性化提醒**，为每人建 topic（如 `healthy-life-reminder-{nickname}`），在各自目标前 N 分钟推送。
+- **提醒逐人推送**：每成员一个随机不可猜的 topic（`members.notify_topic`），睡前提醒任务遍历成员、向各自 topic 推送。这样成员可独立开启/关闭，不会收到别人的提醒。
+- **订阅链接从打卡页获取**：`GET /api/v1/me` 返回 `notifySubscribeUrl = NTFY_BASE_URL/<topic>`，打卡页展示「开启通知」按钮指向该链接（ntfy 网页/App 内订阅）。
+- **启用/禁用**：`PATCH /api/v1/me { notifyEnabled }` 控制服务端是否向该成员推送；关闭后 jobs 跳过，但**不会**代用户从 ntfy App 退订（退订需用户在 App 里操作）。
+- 日报/周报（晨报）仍走共享 `{report}` topic，个性化推送暂缓。
+- 按个人目标时间做**个性化提醒时机**（在各自目标前 N 分钟推送）仍属 Phase 2.4，暂未实现。
 
 ## 鉴权（ACL）
 
@@ -30,7 +34,8 @@ ntfy 是**单向推送**（服务端 → 成员手机），负责：
 
 ```ts
 const notify = createNotifyClient(config.ntfyBaseUrl, config.ntfyToken);
-await notify.publish(config.ntfyTopicReminder, reminderMessage('小明', '23:00'), {
+// 睡前提醒：向该成员自己的 topic 推送（而非共享 topic）
+await notify.publish(member.notifyTopic, reminderMessage('小明', '23:00'), {
   title: '该睡啦',
   priority: 3,
 });

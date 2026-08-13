@@ -1,0 +1,47 @@
+# healthy-life 部署编排：server + jobs 两个常驻进程，共用同一个镜像与 SQLite 数据卷。
+#
+# 使用前：cp .env.example .env 并按需修改（尤其 BASE_URL 必须填公网 https 地址）。
+services:
+  server:
+    build: .
+    image: healthy-life:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # cron 与「天」的判定依赖容器时区，务必设成与 .env 的 TIMEZONE 一致
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      # SQLite 单文件（WAL），挂载到宿主机持久化
+      - ./data:/app/data
+    ports:
+      - "8787:8787"
+    command: ["node", "apps/server/dist/index.js"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8787/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  jobs:
+    build: .
+    image: healthy-life:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ./data:/app/data
+    command: ["node", "apps/jobs/dist/index.js"]
+    # 等 server 先完成 migrate() + 管理员引导，避免两个进程并发跑首次迁移
+    depends_on:
+      server:
+        condition: service_healthy

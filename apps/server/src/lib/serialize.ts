@@ -11,6 +11,8 @@ export function toPublicMember(m: Member): PublicMember {
     emoji: m.emoji,
     targetBedtime: m.targetBedtime,
     lastTimezone: m.lastTimezone,
+    notifyTopic: m.notifyTopic,
+    notifyEnabled: m.notifyEnabled,
     role: m.role,
     status: m.status,
     createdAt: m.createdAt,

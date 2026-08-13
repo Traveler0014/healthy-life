@@ -1,0 +1,21 @@
+# 构建产物与本地状态不进镜像（构建时在容器内重新生成）
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.tsbuildinfo
+
+# 本地数据与密钥
+data/
+.env
+.env.*
+!.env.example
+
+# 版本控制与杂项
+.git/
+.gitignore
+.DS_Store
+.tmp/
+coverage/
+scripts/
+*.log

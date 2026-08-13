@@ -61,6 +61,8 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [labelInput, setLabelInput] = useState('');
   const [savingLabel, setSavingLabel] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [notifySubscribeUrl, setNotifySubscribeUrl] = useState<string | null>(null);
+  const [togglingNotify, setTogglingNotify] = useState(false);
 
   async function copyLink() {
     try {
@@ -108,6 +110,7 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
         api.stats(),
       ]);
       setMe(meRes.member);
+      setNotifySubscribeUrl(meRes.notifySubscribeUrl);
       setToday(todayRes);
       setBoard(boardRes);
       setStats(statsRes);
@@ -133,6 +136,19 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       api.recordEvent('visit_after_checkin').catch(() => {});
     }
   }, [today]);
+
+  async function toggleNotify() {
+    if (!me) return;
+    setTogglingNotify(true);
+    try {
+      const res = await api.updateMe({ notifyEnabled: !me.notifyEnabled });
+      setMe(res.member);
+    } catch {
+      // 忽略失败
+    } finally {
+      setTogglingNotify(false);
+    }
+  }
 
   async function handleCheckin() {
     setCheckingIn(true);
@@ -276,6 +292,37 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
               );
             })}
           </ul>
+        </section>
+      )}
+
+      {!loading && me && (
+        <section className="card">
+          <h2>睡前提醒</h2>
+          <p className="hint small">
+            到点前 ntfy 会给你发一条温和提醒；先在 App 里订阅一次就能收到。
+          </p>
+          <div className="notify-row">
+            <span className={`status-dot ${me.notifyEnabled ? 'early' : 'missing'}`} />
+            <span>{me.notifyEnabled ? '已开启' : '已关闭'}</span>
+            <button
+              type="button"
+              className="button chip notify-toggle"
+              disabled={togglingNotify}
+              onClick={toggleNotify}
+            >
+              {me.notifyEnabled ? '关闭' : '开启'}
+            </button>
+          </div>
+          {notifySubscribeUrl && (
+            <a
+              className="button primary small notify-subscribe"
+              href={notifySubscribeUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              订阅 ntfy 提醒
+            </a>
+          )}
         </section>
       )}
 

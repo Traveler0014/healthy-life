@@ -4,9 +4,9 @@ import { updateMember } from '@healthy-life/db';
 import type { AppDeps, Env } from '../types';
 import { toPublicMember } from '../lib/serialize';
 
-type ProfilePatch = Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime'>>;
+type ProfilePatch = Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'notifyEnabled'>>;
 
-/** 修改自己的昵称 / emoji / 目标就寝时间。 */
+/** 修改自己的昵称 / emoji / 目标就寝时间 / 通知开关。 */
 export function profileRoutes(deps: AppDeps): Hono<Env> {
   const router = new Hono<Env>();
 
@@ -28,11 +28,18 @@ export function profileRoutes(deps: AppDeps): Hono<Env> {
       }
       if (targetBedtime) patch.targetBedtime = targetBedtime;
     }
+    if (typeof body?.notifyEnabled === 'boolean') {
+      patch.notifyEnabled = body.notifyEnabled;
+    }
 
     const updated = updateMember(deps.db, member.id, patch);
     if (!updated) return c.json({ error: 'member not found' }, 404);
 
-    return c.json({ member: toPublicMember(updated) });
+    const base = deps.config.ntfyBaseUrl.replace(/\/+$/, '');
+    return c.json({
+      member: toPublicMember(updated),
+      notifySubscribeUrl: updated.notifyTopic ? `${base}/${updated.notifyTopic}` : null,
+    });
   });
 
   return router;

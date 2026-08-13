@@ -25,7 +25,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   // 其余业务接口统一走鉴权。
   app.use('/api/*', authMiddleware(deps));
 
-  app.route('/api/v1', meRoutes); // GET /me
+  app.route('/api/v1', meRoutes(deps)); // GET /me
   app.route('/api/v1', profileRoutes(deps)); // PATCH /me
   app.route('/api/v1', checkinRoutes(deps)); // POST /checkin, GET /checkin/today
   app.route('/api/v1', boardRoutes(deps)); // GET /board
