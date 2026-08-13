@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { EmojiPicker } from './EmojiPicker';
 import {
   api,
   ApiError,
@@ -59,6 +60,7 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [daytimePrompt, setDaytimePrompt] = useState<{ date: string } | null>(null);
   const [labelInput, setLabelInput] = useState('');
   const [savingLabel, setSavingLabel] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   async function copyLink() {
     try {
@@ -81,6 +83,16 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       // 忽略标签保存失败
     } finally {
       setSavingLabel(false);
+    }
+  }
+
+  async function changeEmoji(emoji: string) {
+    try {
+      const res = await api.updateMe({ emoji });
+      setMe(res.member);
+      setShowEmojiPicker(false);
+    } catch {
+      // 忽略失败
     }
   }
 
@@ -150,6 +162,14 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       <header className="topbar">
         <div className="brand">🌙 早睡打卡</div>
         <div className="topbar-actions">
+          <button
+            type="button"
+            className="button ghost small emoji-btn"
+            onClick={() => setShowEmojiPicker(true)}
+            aria-label="更换表情"
+          >
+            {me?.emoji ?? '😴'}
+          </button>
           <button type="button" className="button ghost small" onClick={copyLink}>
             {copied ? '已复制 ✓' : '复制链接'}
           </button>
@@ -313,6 +333,20 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                 onClick={() => saveDaytimeLabel(labelInput.trim() || null)}
               >
                 确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showEmojiPicker && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label="选择表情">
+            <h2>选个表情</h2>
+            <p className="subtitle">打卡墙上的你就是这个模样～</p>
+            <EmojiPicker value={me?.emoji ?? '😴'} onChange={changeEmoji} />
+            <div className="dialog-actions">
+              <button type="button" className="button ghost" onClick={() => setShowEmojiPicker(false)}>
+                取消
               </button>
             </div>
           </div>

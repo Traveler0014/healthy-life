@@ -184,6 +184,26 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
   return (await res.json()) as T;
 }
 
+/** 睡眠主题 + 全套动物表情（打卡墙头像） */
+export const EMOJI_PRESETS = [
+  // 睡眠主题
+  '😴', '🌙', '⭐', '💤', '✨', '🌟', '🌛',
+  // 哺乳动物
+  '🐵', '🐒', '🦍', '🦧', '🐶', '🐕', '🐩', '🐺', '🦊', '🦝',
+  '🐱', '🐈', '🦁', '🐯', '🐅', '🐆', '🐴', '🐎', '🦄', '🦓', '🦌',
+  '🐮', '🐂', '🐃', '🐄', '🐷', '🐖', '🐗', '🐽', '🐏', '🐑', '🐐',
+  '🐪', '🐫', '🦙', '🦒', '🐘', '🦏', '🦛', '🐭', '🐁', '🐀', '🐹',
+  '🐰', '🐇', '🐿', '🦔', '🦇', '🐻', '🐨', '🐼', '🦥', '🦦', '🦨', '🦘', '🦡', '🐾',
+  // 鸟类
+  '🦃', '🐔', '🐓', '🐣', '🐤', '🐥', '🐦', '🐧', '🕊', '🦅', '🦆', '🦢', '🦉', '🦩', '🦚', '🦜',
+  // 爬行/两栖/恐龙
+  '🐸', '🐊', '🐢', '🦎', '🐍', '🐲', '🐉', '🦕', '🦖',
+  // 海洋
+  '🐳', '🐋', '🐬', '🐟', '🐠', '🐡', '🦈', '🐙', '🦀', '🦞', '🦐', '🦑', '🦪', '🐚',
+  // 昆虫
+  '🐌', '🦋', '🐛', '🐜', '🐝', '🪲', '🐞', '🕷', '🦂',
+];
+
 export const api = {
   /** 公开端点：注册 / 找回合一（同昵称+口令再次调用 = 找回同一条链接） */
   join: (body: {
@@ -198,6 +218,8 @@ export const api = {
       body: { ...body, timezone: getBrowserTimezone() },
     }),
   me: () => request<MeResponse>('/me'),
+  updateMe: (patch: { nickname?: string; emoji?: string; targetBedtime?: string }) =>
+    request<MeResponse>('/me', { method: 'PATCH', body: patch }),
   checkin: () =>
     request<CheckinResponse>('/checkin', {
       method: 'POST',

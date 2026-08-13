@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { api } from './api';
+import { EmojiPicker } from './EmojiPicker';
 
 interface JoinPageProps {
   inviteCode: string;
@@ -15,6 +16,7 @@ export function JoinPage({ inviteCode, onJoined }: JoinPageProps) {
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [targetBedtime, setTargetBedtime] = useState('23:00');
+  const [emoji, setEmoji] = useState('😴');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,7 @@ export function JoinPage({ inviteCode, onJoined }: JoinPageProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.join({ inviteCode, nickname: name, password, targetBedtime });
+      const res = await api.join({ inviteCode, nickname: name, password, targetBedtime, emoji });
       onJoined(res.token);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加入失败，请稍后再试');
@@ -61,6 +63,11 @@ export function JoinPage({ inviteCode, onJoined }: JoinPageProps) {
               required
             />
           </label>
+
+          <div className="field">
+            <span>选个表情</span>
+            <EmojiPicker value={emoji} onChange={setEmoji} />
+          </div>
 
           <label className="field">
             <span>口令</span>
