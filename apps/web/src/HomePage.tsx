@@ -12,6 +12,9 @@ import {
 
 interface HomePageProps {
   onLogout: () => void;
+  /** 刚完成身份绑定（跳转到专属链接时）为 true，用于展示一次性提示 */
+  justJoined?: boolean;
+  onDismissJoinHint?: () => void;
 }
 
 function formatTime(iso: string): string {
@@ -27,7 +30,7 @@ function outcomeLabel(outcome: Outcome): string {
 }
 
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
-export function HomePage({ onLogout }: HomePageProps) {
+export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
   const [me, setMe] = useState<Member | null>(null);
   const [today, setToday] = useState<TodayResponse | null>(null);
   const [board, setBoard] = useState<BoardResponse | null>(null);
@@ -39,6 +42,17 @@ export function HomePage({ onLogout }: HomePageProps) {
   // 「打卡后再次访问」事件：本次会话内完成打卡的，不再算作“再次访问”
   const checkedInThisSession = useRef(false);
   const visitLogged = useRef(false);
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // 忽略复制失败（例如非 https 环境）
+    }
+  }
 
   const loadData = useCallback(async () => {
     setError(null);
@@ -99,10 +113,29 @@ export function HomePage({ onLogout }: HomePageProps) {
     <main className="page home-page">
       <header className="topbar">
         <div className="brand">🌙 早睡打卡</div>
-        <button type="button" className="button ghost" onClick={onLogout}>
-          退出
-        </button>
+        <div className="topbar-actions">
+          <button type="button" className="button ghost small" onClick={copyLink}>
+            {copied ? '已复制 ✓' : '复制链接'}
+          </button>
+          <button type="button" className="button ghost" onClick={onLogout}>
+            退出
+          </button>
+        </div>
       </header>
+
+      {justJoined && (
+        <div className="toast" role="status">
+          <p>🔗 这是你的专属打卡链接，收藏或复制当前地址，下次直接打开就能打卡～</p>
+          <div className="toast-actions">
+            <button type="button" className="button ghost small" onClick={copyLink}>
+              {copied ? '已复制 ✓' : '复制链接'}
+            </button>
+            <button type="button" className="button primary small" onClick={onDismissJoinHint}>
+              知道了
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading && <p className="hint">加载中…</p>}
       {error && <p className="error" role="alert">{error}</p>}

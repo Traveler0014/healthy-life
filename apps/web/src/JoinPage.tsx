@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { api, setToken } from './api';
+import { api } from './api';
 
 interface JoinPageProps {
   inviteCode: string;
-  onJoined: () => void;
+  /** 加入成功后由 App 接管：存 token 并跳转到专属链接 /c/<token> */
+  onJoined: (token: string) => void;
 }
 
 /**
@@ -16,8 +17,6 @@ export function JoinPage({ inviteCode, onJoined }: JoinPageProps) {
   const [targetBedtime, setTargetBedtime] = useState('23:00');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [link, setLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,46 +33,12 @@ export function JoinPage({ inviteCode, onJoined }: JoinPageProps) {
     setError(null);
     try {
       const res = await api.join({ inviteCode, nickname: name, password, targetBedtime });
-      setToken(res.token);
-      setLink(res.link);
+      onJoined(res.token);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加入失败，请稍后再试');
     } finally {
       setSubmitting(false);
     }
-  }
-
-  async function copyLink() {
-    if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
-  if (link) {
-    return (
-      <main className="page join-page">
-        <div className="card join-card">
-          <div className="join-emoji">🎉</div>
-          <h1>你的专属打卡链接</h1>
-          <p className="subtitle">
-            收藏这条链接，以后打开它就能直接打卡（跨设备都行）。丢了也没关系，用「昵称 + 口令」再进来一次就能找回。
-          </p>
-          <div className="link-box">
-            <code className="link-value">{link}</code>
-            <button type="button" className="button ghost" onClick={copyLink}>
-              {copied ? '已复制 ✓' : '复制链接'}
-            </button>
-          </div>
-          <button type="button" className="button primary" onClick={onJoined}>
-            进入打卡页
-          </button>
-        </div>
-      </main>
-    );
   }
 
   return (

@@ -373,3 +373,47 @@ h2 {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* ---------- 专属链接 / 顶部操作 / 提示 ---------- */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.button.small {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.button.primary.small {
+  width: auto;
+  font-size: 14px;
+  padding: 8px 16px;
+}
+
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+
+.toast p {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.toast-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

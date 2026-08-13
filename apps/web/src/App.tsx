@@ -25,39 +25,57 @@ function parseLinkToken(pathname: string): string | null {
 
 /**
  * 轻量路由（无额外依赖）：
- * - /c/:token     → 专属打卡链接：提取 token 存入本地，进入主界面
+ * - /c/:token      → 专属打卡链接（地址栏即链接，持有即本人，可收藏）
  * - /i/:inviteCode → 邀请加入页（注册 / 找回）
- * - 已有 token     → 直接进主界面（打卡页）
+ * - 已登录但地址栏非 /c/... → 自动规范化到专属链接
  */
 export function App() {
-  const [hasToken, setHasToken] = useState(() => Boolean(getToken()));
+  const [token, setTokenState] = useState<string | null>(() => getToken());
+  const [justJoined, setJustJoined] = useState(false);
 
+  // /c/:token 访问 → 提取并持久化 token（URL 保持不变）
   useEffect(() => {
     const linkToken = parseLinkToken(window.location.pathname);
-    if (linkToken) {
+    if (linkToken && linkToken !== token) {
       setToken(linkToken);
-      window.history.replaceState(null, '', '/');
-      setHasToken(true);
+      setTokenState(linkToken);
     }
+    // 仅在挂载时处理一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const inviteCode = parseInviteCode(window.location.pathname);
+  // 已登录但地址栏不是专属链接 → 规范化到 /c/:token
+  useEffect(() => {
+    if (token && !parseLinkToken(window.location.pathname)) {
+      window.history.replaceState(null, '', `/c/${token}`);
+    }
+  }, [token]);
 
-  const handleJoined = useCallback(() => {
-    window.history.replaceState(null, '', '/');
-    setHasToken(true);
+  const handleJoined = useCallback((newToken: string) => {
+    setToken(newToken);
+    setTokenState(newToken);
+    setJustJoined(true);
+    window.history.replaceState(null, '', `/c/${newToken}`);
   }, []);
 
   const handleLogout = useCallback(() => {
     clearToken();
+    setTokenState(null);
+    setJustJoined(false);
     window.history.replaceState(null, '', '/');
-    setHasToken(false);
   }, []);
 
-  if (hasToken) {
-    return <HomePage onLogout={handleLogout} />;
+  if (token) {
+    return (
+      <HomePage
+        onLogout={handleLogout}
+        justJoined={justJoined}
+        onDismissJoinHint={() => setJustJoined(false)}
+      />
+    );
   }
 
+  const inviteCode = parseInviteCode(window.location.pathname);
   if (inviteCode) {
     return <JoinPage inviteCode={inviteCode} onJoined={handleJoined} />;
   }
