@@ -10,6 +10,7 @@ import { checkinRoutes } from './routes/checkin';
 import { boardRoutes } from './routes/board';
 import { statsRoutes } from './routes/stats';
 import { groupPublicRoutes, groupRoutes } from './routes/groups';
+import { eventRoutes } from './routes/events';
 
 export function createApp(deps: AppDeps): Hono<Env> {
   const app = new Hono<Env>();
@@ -28,6 +29,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', checkinRoutes(deps)); // POST /checkin, GET /checkin/today
   app.route('/api/v1', boardRoutes(deps)); // GET /board
   app.route('/api/v1', statsRoutes(deps)); // GET /stats
+  app.route('/api/v1', eventRoutes(deps)); // POST /events
   app.route('/api/v1', groupRoutes(deps)); // 群管理（admin）
 
   // 托管 web 构建产物（SPA）。

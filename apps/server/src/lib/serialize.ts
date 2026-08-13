@@ -1,7 +1,7 @@
 import type { Member } from '@healthy-life/shared';
 
-/** 返回给前端的成员形状：剥离 tokenHash 等内部字段。 */
-export type PublicMember = Omit<Member, 'tokenHash'>;
+/** 返回给前端的成员形状：剥离 tokenHash / passwordHash / passwordSalt 等内部字段。 */
+export type PublicMember = Omit<Member, 'tokenHash' | 'passwordHash' | 'passwordSalt'>;
 
 export function toPublicMember(m: Member): PublicMember {
   return {

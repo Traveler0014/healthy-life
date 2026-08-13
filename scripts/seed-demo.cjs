@@ -11,7 +11,14 @@ const {
   createMember,
   upsertCheckin,
 } = require(path.resolve(__dirname, '../packages/db/dist/index.js'));
-const { sha256, generateToken, currentCheckinDay, addDays } = require(path.resolve(__dirname, '../packages/shared/dist/index.js'));
+const {
+  sha256,
+  generateToken,
+  currentCheckinDay,
+  addDays,
+  deriveLinkToken,
+  hashPassword,
+} = require(path.resolve(__dirname, '../packages/shared/dist/index.js'));
 
 const DB_PATH = process.env.DB_PATH || './data/demo.db';
 const TZ = 'Asia/Shanghai';
@@ -30,22 +37,25 @@ const group = createGroup(db, {
   visibility: 'exact', // 打卡墙显示精确时间
 });
 
-function mk(nickname, emoji, targetBedtime, role = 'member') {
-  const token = generateToken();
+function mk(nickname, emoji, targetBedtime, password, role = 'member') {
+  const salt = generateToken(16);
+  const linkToken = deriveLinkToken(group.id, nickname, password);
   const member = createMember(db, {
     groupId: group.id,
     nickname,
     emoji,
     targetBedtime,
-    tokenHash: sha256(token),
+    tokenHash: sha256(linkToken),
+    passwordHash: hashPassword(password, salt),
+    passwordSalt: salt,
     role,
   });
-  return { member, token };
+  return { member, linkToken, password };
 }
 
-const ming = mk('小明', '🌙', '23:00', 'admin');
-const hong = mk('小红', '⭐', '23:30');
-const gang = mk('小刚', '🐼', '23:00');
+const ming = mk('小明', '🌙', '23:00', '1234', 'admin');
+const hong = mk('小红', '⭐', '23:30', '1234');
+const gang = mk('小刚', '🐼', '23:00', '1234');
 
 // 今晚：小明 22:45 早睡、小红 23:45 晚睡（>23:30）、小刚 未打卡
 upsertCheckin(db, { memberId: ming.member.id, date: today, checkedInAt: isoAt(today, '22:45') });
@@ -64,6 +74,11 @@ upsertCheckin(db, { memberId: hong.member.id, date: addDays(today, -4), checkedI
 
 console.log('=== 演示数据已就绪 ===');
 console.log('群:', group.name, '| 邀请码:', group.inviteCode, '| 可见性:', group.visibility);
-console.log('成员:', [ming, hong, gang].map((x) => `${x.member.nickname}(${x.member.targetBedtime},${x.member.role})`).join(' '));
+console.log('成员（口令均为 1234）:');
+for (const x of [ming, hong, gang]) {
+  console.log(
+    `  ${x.member.nickname}(${x.member.targetBedtime},${x.member.role}) 口令=${x.password} 链接=/c/${x.linkToken}`,
+  );
+}
 console.log('今晚:', today, '→ 小明 22:45(早睡) / 小红 23:45(晚睡) / 小刚(未打卡)');
 console.log('邀请链接: /i/' + group.inviteCode);

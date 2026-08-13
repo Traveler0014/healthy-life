@@ -15,7 +15,7 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/join` | ✅ 公开。用邀请码加入：`{ inviteCode, nickname, targetBedtime, emoji? }` → 返回 `{ member, token }`（token 明文只在此时返回一次）。首位成员自动成为 admin |
+| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。首位成员自动 admin |
 | GET | `/api/v1/me` | ✅ 返回当前成员（不含 tokenHash） |
 | PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 |
 
@@ -26,6 +26,7 @@
 | POST | `/api/v1/checkin` | ✅ 打卡（记录当前时刻，date 由服务端按群时区算）。幂等：同一天重复调用=更新。返回 `{ checkin, outcome: 'early'\|'late', message }` |
 | GET | `/api/v1/checkin/today` | ✅ 今晚我的打卡状态（未打/已打+时间+outcome） |
 | GET | `/api/v1/board` | ✅ 今日打卡墙（按群 visibility 返回精确时间或仅状态） |
+| POST | `/api/v1/events` | ✅ 记录原始事件 `{ type, payload? }`（如 `visit_after_checkin`），追加不覆盖 |
 | GET | `/api/v1/prompts/random` | 领一道睡前思考题（Phase 3，未实现） |
 
 ### 统计 / 报告
@@ -45,11 +46,13 @@
 | POST | `/api/v1/groups/:id/invites` | ✅ admin。幂等返回现有 `inviteCode` + 完整链接（v1 不轮换） |
 | PATCH | `/api/v1/groups/:id` | ✅ admin。改群设置（name / timezone / visibility） |
 
-## 鉴权细节
+## 身份与鉴权
 
-- `join` 时服务端生成随机 token，**只返回一次明文**，库存 sha256（`tokenHash`）。
-- 客户端把 token 存 localStorage / cookie，后续请求带 `Authorization: Bearer <token>`。
-- 邀请链接 `BASE_URL/i/<inviteCode>` 打开后前端引导走 `join`（或仅填昵称，token 已内嵌链接）。具体交互由 web agent 定，但**接口契约以上表为准**。
+- **打卡链接 = 身份**：`join` 返回 `link = BASE_URL/c/<token>`，打开即进打卡页（可收藏、跨设备）。
+- token 由 `deriveLinkToken(groupId, nickname, password)` 确定性派生 → 链接稳定不变；服务端只存 sha256（`tokenHash`），找回时可重算同一条链接。
+- **找回 = 登录**：`join` 合并注册/找回——同名+同口令再次调用返回同一条 link；口令错误 401。
+- 口令只存加盐哈希（`passwordHash` + `passwordSalt`），不存明文。
+- 客户端把 token 存 localStorage，请求带 `Authorization: Bearer <token>`。
 
 ## 实现注意
 

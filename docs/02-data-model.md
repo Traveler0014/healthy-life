@@ -17,10 +17,12 @@
 |---|---|---|
 | id | TEXT PK | uuid |
 | group_id | TEXT FK | 所属群 |
-| nickname | TEXT | 昵称 |
+| nickname | TEXT | 昵称（群内唯一：UNIQUE(group_id, nickname)） |
 | emoji | TEXT | 头像 emoji |
 | target_bedtime | TEXT | 个人目标就寝 `HH:mm`（群时区） |
-| token_hash | TEXT UNIQUE | 邀请令牌的 **sha256**，不存明文 |
+| token_hash | TEXT UNIQUE | 打卡链接 token 的 **sha256**（token 由 群+昵称+口令 确定性派生） |
+| password_hash | TEXT | 口令加盐哈希 |
+| password_salt | TEXT | 口令盐 |
 | role | TEXT | `admin` / `member` |
 | status | TEXT | `active` / `disabled` |
 | created_at | TEXT | ISO |
@@ -36,6 +38,20 @@
 | created_at / updated_at | TEXT | |
 
 约束：`UNIQUE(member_id, date)` — 每晚一人一条，重复打卡是**更新**而非新增（幂等）。
+
+## events（原始事件流）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | TEXT PK | uuid |
+| member_id | TEXT FK | |
+| type | TEXT | 开放类型：`visit_after_checkin`、`prompt_claimed` 等 |
+| date | TEXT | 打卡日 `YYYY-MM-DD`（群时区） |
+| occurred_at | TEXT | 事件发生 ISO 时间戳 |
+| payload | TEXT | JSON 字符串，可空 |
+| created_at | TEXT | |
+
+**追加不覆盖、不去重**——完整保留原始数据，供后续称号/失眠判定等迭代使用。
 
 ## 关键点
 

@@ -1,7 +1,10 @@
 import type { Db } from './client';
-import { SCHEMA_V1 } from './schema';
+import { SCHEMA_V1, SCHEMA_V2 } from './schema';
 
-const migrations: { version: number; sql: string }[] = [{ version: 1, sql: SCHEMA_V1 }];
+const migrations: { version: number; sql: string }[] = [
+  { version: 1, sql: SCHEMA_V1 },
+  { version: 2, sql: SCHEMA_V2 },
+];
 
 export function migrate(db: Db): void {
   db.exec(

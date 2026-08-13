@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   api,
   ApiError,
@@ -36,6 +36,9 @@ export function HomePage({ onLogout }: HomePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [receipt, setReceipt] = useState<CheckinResponse | null>(null);
+  // 「打卡后再次访问」事件：本次会话内完成打卡的，不再算作“再次访问”
+  const checkedInThisSession = useRef(false);
+  const visitLogged = useRef(false);
 
   const loadData = useCallback(async () => {
     setError(null);
@@ -65,12 +68,21 @@ export function HomePage({ onLogout }: HomePageProps) {
     void loadData();
   }, [loadData]);
 
+  // 记录「打卡后再次访问」事件（原始数据，供后续失眠判定/称号迭代）
+  useEffect(() => {
+    if (today?.checkedIn && !checkedInThisSession.current && !visitLogged.current) {
+      visitLogged.current = true;
+      api.recordEvent('visit_after_checkin').catch(() => {});
+    }
+  }, [today]);
+
   async function handleCheckin() {
     setCheckingIn(true);
     setError(null);
     try {
       const res = await api.checkin();
       setReceipt(res);
+      checkedInThisSession.current = true;
       await loadData();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

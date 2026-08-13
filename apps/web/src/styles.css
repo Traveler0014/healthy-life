@@ -356,3 +356,20 @@ h2 {
   width: 100%;
   text-align: center;
 }
+
+.link-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+  width: 100%;
+}
+.link-value {
+  display: block;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  word-break: break-all;
+  font-size: 13px;
+  line-height: 1.5;
+}

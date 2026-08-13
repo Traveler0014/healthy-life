@@ -19,8 +19,12 @@ export interface Member {
   emoji: string;
   /** 个人目标就寝时间，'HH:mm'（按群时区） */
   targetBedtime: string;
-  /** 邀请令牌的 sha256，不存明文 */
+  /** 打卡链接 token 的 sha256，不存明文（token 由 群+昵称+口令 确定性派生） */
   tokenHash: string;
+  /** 口令的加盐哈希，不存明文 */
+  passwordHash: string;
+  /** 口令盐 */
+  passwordSalt: string;
   role: Role;
   status: MemberStatus;
   createdAt: string;
@@ -35,4 +39,18 @@ export interface Checkin {
   checkedInAt: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Event {
+  id: string;
+  memberId: string;
+  /** 开放类型，如 'visit_after_checkin'、'prompt_claimed'、'prompt_viewed' */
+  type: string;
+  /** 打卡日 'YYYY-MM-DD'（群时区） */
+  date: string;
+  /** 事件发生 ISO 时间戳 */
+  occurredAt: string;
+  /** JSON 字符串，可空，存类型特定的附加数据 */
+  payload: string | null;
+  createdAt: string;
 }

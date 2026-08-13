@@ -1,13 +1,8 @@
-import { useCallback, useState } from 'react';
-import { clearToken, getToken } from './api';
+import { useCallback, useEffect, useState } from 'react';
+import { clearToken, getToken, setToken } from './api';
 import { JoinPage } from './JoinPage';
 import { HomePage } from './HomePage';
 
-/**
- * 轻量路由（无额外依赖）：
- * - /i/:inviteCode → 邀请加入页
- * - 已有 token → 直接进主界面（打卡页）
- */
 function parseInviteCode(pathname: string): string | null {
   const match = pathname.match(/^\/i\/([^/?#]+)/);
   if (!match) return null;
@@ -18,9 +13,34 @@ function parseInviteCode(pathname: string): string | null {
   }
 }
 
+function parseLinkToken(pathname: string): string | null {
+  const match = pathname.match(/^\/c\/([^/?#]+)/);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+/**
+ * 轻量路由（无额外依赖）：
+ * - /c/:token     → 专属打卡链接：提取 token 存入本地，进入主界面
+ * - /i/:inviteCode → 邀请加入页（注册 / 找回）
+ * - 已有 token     → 直接进主界面（打卡页）
+ */
 export function App() {
   const [hasToken, setHasToken] = useState(() => Boolean(getToken()));
-  // 每次渲染从当前 URL 读取，配合 history.replaceState 在加入/退出后即时更新。
+
+  useEffect(() => {
+    const linkToken = parseLinkToken(window.location.pathname);
+    if (linkToken) {
+      setToken(linkToken);
+      window.history.replaceState(null, '', '/');
+      setHasToken(true);
+    }
+  }, []);
+
   const inviteCode = parseInviteCode(window.location.pathname);
 
   const handleJoined = useCallback(() => {

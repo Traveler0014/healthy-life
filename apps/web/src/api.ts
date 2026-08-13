@@ -36,6 +36,8 @@ export interface JoinResponse {
   member: Member;
   /** 明文 token 只返回一次 */
   token: string;
+  /** 完整打卡链接 BASE_URL/c/<token>（可收藏/跨设备） */
+  link: string;
 }
 
 export interface MeResponse {
@@ -75,6 +77,18 @@ export interface StatsResponse {
   lateDays: number;
   /** 早睡占比 = early / (early + late) */
   earlyRate: number;
+}
+
+export interface RecordEventResponse {
+  event: {
+    id: string;
+    memberId: string;
+    type: string;
+    date: string;
+    occurredAt: string;
+    payload: string | null;
+    createdAt: string;
+  };
 }
 
 const TOKEN_KEY = 'healthy-life:token';
@@ -123,12 +137,19 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
 }
 
 export const api = {
-  /** 公开端点：用邀请码加入 */
-  join: (body: { inviteCode: string; nickname: string; targetBedtime?: string }) =>
-    request<JoinResponse>('/join', { method: 'POST', body }),
+  /** 公开端点：注册 / 找回合一（同昵称+口令再次调用 = 找回同一条链接） */
+  join: (body: {
+    inviteCode: string;
+    nickname: string;
+    password: string;
+    targetBedtime?: string;
+    emoji?: string;
+  }) => request<JoinResponse>('/join', { method: 'POST', body }),
   me: () => request<MeResponse>('/me'),
   checkin: () => request<CheckinResponse>('/checkin', { method: 'POST' }),
   today: () => request<TodayResponse>('/checkin/today'),
   board: () => request<BoardResponse>('/board'),
   stats: () => request<StatsResponse>('/stats'),
+  recordEvent: (type: string, payload?: unknown) =>
+    request<RecordEventResponse>('/events', { method: 'POST', body: { type, payload } }),
 };

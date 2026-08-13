@@ -33,3 +33,20 @@ CREATE TABLE IF NOT EXISTS checkins (
 );
 CREATE INDEX IF NOT EXISTS idx_checkins_member_date ON checkins(member_id, date);
 `;
+
+export const SCHEMA_V2 = `
+ALTER TABLE members ADD COLUMN password_hash TEXT NOT NULL DEFAULT '';
+ALTER TABLE members ADD COLUMN password_salt TEXT NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_members_group_nickname ON members(group_id, nickname);
+
+CREATE TABLE IF NOT EXISTS events (
+  id          TEXT PRIMARY KEY,
+  member_id   TEXT NOT NULL REFERENCES members(id),
+  type        TEXT NOT NULL,
+  date        TEXT NOT NULL,
+  occurred_at TEXT NOT NULL,
+  payload     TEXT,
+  created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_member_date ON events(member_id, date);
+`;
