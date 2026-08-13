@@ -24,14 +24,14 @@ function toGroup(r: GroupRow): Group {
 
 export function createGroup(
   db: Db,
-  input: { name: string; inviteCode: string; timezone?: string; visibility?: GroupVisibility },
+  input: { id?: string; name: string; inviteCode: string; timezone?: string; visibility?: GroupVisibility },
 ): Group {
   const createdAt = new Date().toISOString();
   db.prepare(
     `INSERT INTO groups (id, name, invite_code, timezone, visibility, created_at)
      VALUES (@id, @name, @inviteCode, @timezone, @visibility, @createdAt)`,
   ).run({
-    id: randomUUID(),
+    id: input.id ?? randomUUID(),
     name: input.name,
     inviteCode: input.inviteCode,
     timezone: input.timezone ?? 'Asia/Shanghai',

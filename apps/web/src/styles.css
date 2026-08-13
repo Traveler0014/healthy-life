@@ -538,3 +538,43 @@ h2 {
   font-size: 20px;
   padding: 2px 8px;
 }
+
+/* ---------- 管理后台 ---------- */
+.notice {
+  background: rgba(143, 217, 154, 0.15);
+  color: var(--early);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.room-block {
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+
+.room-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.button.danger {
+  color: var(--danger);
+}

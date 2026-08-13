@@ -9,7 +9,8 @@ import { profileRoutes } from './routes/profile';
 import { checkinRoutes } from './routes/checkin';
 import { boardRoutes } from './routes/board';
 import { statsRoutes } from './routes/stats';
-import { groupPublicRoutes, groupRoutes } from './routes/groups';
+import { groupRoutes } from './routes/groups';
+import { adminPublicRoutes, adminRoutes } from './routes/admin';
 import { eventRoutes } from './routes/events';
 
 export function createApp(deps: AppDeps): Hono<Env> {
@@ -19,7 +20,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
 
   // 公开端点（无需鉴权）：必须在 authMiddleware 之前注册。
   app.route('/api/v1', joinRoutes(deps)); // POST /join
-  app.route('/api/v1', groupPublicRoutes(deps)); // POST /groups
+  app.route('/api/v1', adminPublicRoutes(deps)); // POST /admin/login
 
   // 其余业务接口统一走鉴权。
   app.use('/api/*', authMiddleware(deps));
@@ -30,7 +31,8 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', boardRoutes(deps)); // GET /board
   app.route('/api/v1', statsRoutes(deps)); // GET /stats
   app.route('/api/v1', eventRoutes(deps)); // POST /events
-  app.route('/api/v1', groupRoutes(deps)); // 群管理（admin）
+  app.route('/api/v1', adminRoutes(deps)); // PATCH /admin/password
+  app.route('/api/v1', groupRoutes(deps)); // 房间/成员管理（admin）
 
   // 托管 web 构建产物（SPA）。
   // 前端路由（如 /i/<inviteCode>）在 dist 下没有对应文件，需要回退到 index.html。

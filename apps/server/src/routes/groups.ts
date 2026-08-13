@@ -1,6 +1,22 @@
 import { Hono } from 'hono';
-import { generateToken, type Group } from '@healthy-life/shared';
-import { createGroup, getGroupById, listMembers, updateGroup } from '@healthy-life/db';
+import {
+  deriveLinkToken,
+  generateToken,
+  hashPassword,
+  sha256,
+  SYSTEM_GROUP_ID,
+  type Group,
+} from '@healthy-life/shared';
+import {
+  createGroup,
+  deleteMember,
+  getGroupById,
+  getMemberById,
+  listGroups,
+  listMembers,
+  updateGroup,
+  updateMemberPassword,
+} from '@healthy-life/db';
 import type { AppDeps, Env } from '../types';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { toPublicMember } from '../lib/serialize';
@@ -11,19 +27,23 @@ function isValidVisibility(v: unknown): v is Group['visibility'] {
   return v === 'exact' || v === 'presence';
 }
 
-/**
- * 公开端点：建群（无需鉴权）。服务端生成 inviteCode，返回 { group }（含 inviteCode）。
- * 建群者随后经 POST /join 首位加入，自动成为 admin。
- */
-export function groupPublicRoutes(deps: AppDeps): Hono<Env> {
+/** 房间 / 成员管理（均需系统管理员）。 */
+export function groupRoutes(deps: AppDeps): Hono<Env> {
   const router = new Hono<Env>();
 
+  router.use('/groups/*', requireAdmin());
+
+  // 房间列表（排除系统群）
+  router.get('/groups', (c) => {
+    const groups = listGroups(deps.db).filter((g) => g.id !== SYSTEM_GROUP_ID);
+    return c.json({ groups });
+  });
+
+  // 建房间
   router.post('/groups', async (c) => {
     const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
-
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     if (!name) return c.json({ error: 'name is required' }, 400);
-
     if (body?.visibility !== undefined && !isValidVisibility(body.visibility)) {
       return c.json({ error: 'visibility must be exact or presence' }, 400);
     }
@@ -37,52 +57,34 @@ export function groupPublicRoutes(deps: AppDeps): Hono<Env> {
           : undefined,
       visibility: isValidVisibility(body?.visibility) ? body.visibility : undefined,
     });
-
     return c.json({ group }, 201);
   });
 
-  return router;
-}
-
-/** 群管理端点（均需 admin 角色）。 */
-export function groupRoutes(deps: AppDeps): Hono<Env> {
-  const router = new Hono<Env>();
-
-  router.use('/groups/*', requireAdmin());
-
+  // 成员列表
   router.get('/groups/:id/members', (c) => {
-    const id = c.req.param('id');
-    const group = getGroupById(deps.db, id);
+    const group = getGroupById(deps.db, c.req.param('id'));
     if (!group) return c.json({ error: 'group not found' }, 404);
-
-    const members = listMembers(deps.db, id);
-    return c.json({ group: group.id, members: members.map(toPublicMember) });
+    return c.json({ group: group.id, members: listMembers(deps.db, group.id).map(toPublicMember) });
   });
 
-  // v1 语义：幂等返回现有 inviteCode + 完整链接，不轮换邀请码。
+  // 邀请链接（幂等返回）
   router.post('/groups/:id/invites', (c) => {
-    const id = c.req.param('id');
-    const group = getGroupById(deps.db, id);
+    const group = getGroupById(deps.db, c.req.param('id'));
     if (!group) return c.json({ error: 'group not found' }, 404);
-
     const base = deps.config.baseUrl.replace(/\/+$/, '');
     return c.json({ inviteCode: group.inviteCode, link: `${base}/i/${group.inviteCode}` });
   });
 
+  // 改房间设置
   router.patch('/groups/:id', async (c) => {
-    const id = c.req.param('id');
-    const group = getGroupById(deps.db, id);
+    const group = getGroupById(deps.db, c.req.param('id'));
     if (!group) return c.json({ error: 'group not found' }, 404);
 
     const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
-
     const patch: GroupPatch = {};
-    if (typeof body?.name === 'string' && body.name.trim() !== '') {
-      patch.name = body.name.trim();
-    }
-    if (typeof body?.timezone === 'string' && body.timezone.trim() !== '') {
+    if (typeof body?.name === 'string' && body.name.trim() !== '') patch.name = body.name.trim();
+    if (typeof body?.timezone === 'string' && body.timezone.trim() !== '')
       patch.timezone = body.timezone.trim();
-    }
     if (body?.visibility !== undefined) {
       if (!isValidVisibility(body.visibility)) {
         return c.json({ error: 'visibility must be exact or presence' }, 400);
@@ -90,8 +92,47 @@ export function groupRoutes(deps: AppDeps): Hono<Env> {
       patch.visibility = body.visibility;
     }
 
-    const updated = updateGroup(deps.db, id, patch);
-    return c.json({ group: updated });
+    return c.json({ group: updateGroup(deps.db, group.id, patch) });
+  });
+
+  // 移除成员（连带其打卡记录与事件）
+  router.delete('/groups/:id/members/:memberId', (c) => {
+    const groupId = c.req.param('id');
+    const target = getMemberById(deps.db, c.req.param('memberId'));
+    if (!target || target.groupId !== groupId) return c.json({ error: 'member not found' }, 404);
+    deleteMember(deps.db, target.id);
+    return c.json({ ok: true });
+  });
+
+  // 重设成员口令（兜底找回：口令变了，派生链接自动轮换）
+  router.post('/groups/:id/members/:memberId/reset', async (c) => {
+    const groupId = c.req.param('id');
+    const target = getMemberById(deps.db, c.req.param('memberId'));
+    if (!target || target.groupId !== groupId) return c.json({ error: 'member not found' }, 404);
+
+    const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+    let newPassword =
+      typeof body?.password === 'string' && body.password.trim().length >= 4
+        ? body.password.trim()
+        : '';
+    const autoGenerated = newPassword === '';
+    if (autoGenerated) newPassword = generateToken(8);
+
+    const salt = generateToken(16);
+    const linkToken = deriveLinkToken(groupId, target.nickname, newPassword);
+    updateMemberPassword(deps.db, target.id, {
+      passwordHash: hashPassword(newPassword, salt),
+      passwordSalt: salt,
+      tokenHash: sha256(linkToken),
+    });
+
+    const base = deps.config.baseUrl.replace(/\/+$/, '');
+    const updated = getMemberById(deps.db, target.id);
+    return c.json({
+      member: updated ? toPublicMember(updated) : null,
+      link: `${base}/c/${linkToken}`,
+      password: autoGenerated ? newPassword : undefined,
+    });
   });
 
   return router;

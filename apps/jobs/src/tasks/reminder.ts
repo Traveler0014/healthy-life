@@ -1,4 +1,4 @@
-import { currentCheckinDay } from '@healthy-life/shared';
+import { currentCheckinDay, SYSTEM_GROUP_ID } from '@healthy-life/shared';
 import { getCheckin, listGroups, listMembers } from '@healthy-life/db';
 import { createNotifyClient, reminderMessage } from '@healthy-life/notify';
 import type { JobDeps } from '../types';
@@ -17,6 +17,7 @@ export async function runReminder(deps: JobDeps): Promise<void> {
 
   let sent = 0;
   for (const group of listGroups(db)) {
+    if (group.id === SYSTEM_GROUP_ID) continue; // 跳过系统群
     const members = listMembers(db, group.id).filter((m) => m.status === 'active');
 
     for (const member of members) {

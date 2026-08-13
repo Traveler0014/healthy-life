@@ -88,6 +88,25 @@ export function getMemberByNickname(db: Db, groupId: string, nickname: string): 
   return row ? toMember(row) : undefined;
 }
 
+/** 重设成员口令（口令变了，派生链接自动轮换） */
+export function updateMemberPassword(
+  db: Db,
+  id: string,
+  input: { passwordHash: string; passwordSalt: string; tokenHash: string },
+): Member | undefined {
+  db.prepare(
+    `UPDATE members SET password_hash = @passwordHash, password_salt = @passwordSalt, token_hash = @tokenHash WHERE id = @id`,
+  ).run({ id, ...input });
+  return getMemberById(db, id);
+}
+
+/** 删除成员（连带其打卡记录与事件） */
+export function deleteMember(db: Db, id: string): void {
+  db.prepare(`DELETE FROM checkins WHERE member_id = ?`).run(id);
+  db.prepare(`DELETE FROM events WHERE member_id = ?`).run(id);
+  db.prepare(`DELETE FROM members WHERE id = ?`).run(id);
+}
+
 export function listMembers(db: Db, groupId: string): Member[] {
   const rows = db.prepare(`SELECT * FROM members WHERE group_id = ? ORDER BY created_at`).all(groupId) as
     MemberRow[];

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_ADMIN_PASSWORD,
   DEFAULT_DAY_BOUNDARY_HOUR,
   DEFAULT_REMINDER_TIME,
   DEFAULT_REPORT_TIME,
@@ -17,6 +18,8 @@ export interface AppConfig {
   dayBoundaryHour: number;
   reminderTime: string;
   reportTime: string;
+  /** 系统管理员默认口令（仅首次创建 admin 时用） */
+  adminPassword: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -32,5 +35,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dayBoundaryHour: Number(env.DAY_BOUNDARY_HOUR ?? DEFAULT_DAY_BOUNDARY_HOUR),
     reminderTime: env.REMINDER_TIME ?? DEFAULT_REMINDER_TIME,
     reportTime: env.REPORT_TIME ?? DEFAULT_REPORT_TIME,
+    adminPassword: env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
   };
 }

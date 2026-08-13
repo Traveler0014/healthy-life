@@ -3,10 +3,7 @@ import { deriveLinkToken, generateToken, hashPassword, sha256 } from '@healthy-l
 import {
   createMember,
   getGroupByInviteCode,
-  getMemberById,
   getMemberByNickname,
-  listMembers,
-  updateMember,
 } from '@healthy-life/db';
 import type { AppDeps, Env } from '../types';
 import { toPublicMember } from '../lib/serialize';
@@ -69,7 +66,7 @@ export function joinRoutes(deps: AppDeps): Hono<Env> {
       });
     }
 
-    // 注册：新成员
+    // 注册：新成员（一律 member，管理员是系统级账号）
     const passwordSalt = generateToken(16);
     const member = createMember(deps.db, {
       groupId: group.id,
@@ -82,15 +79,9 @@ export function joinRoutes(deps: AppDeps): Hono<Env> {
       lastTimezone: timezone,
     });
 
-    // 首位成员自动成为 admin（建群者即组织者）。
-    if (listMembers(deps.db, group.id).length === 1) {
-      updateMember(deps.db, member.id, { role: 'admin' });
-    }
-
-    const finalMember = getMemberById(deps.db, member.id) ?? member;
     return c.json(
       {
-        member: toPublicMember(finalMember),
+        member: toPublicMember(member),
         token: linkToken,
         link: `${base}/c/${linkToken}`,
       },

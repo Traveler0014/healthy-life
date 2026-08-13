@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { clearToken, getToken, setToken } from './api';
+import {
+  api,
+  ApiError,
+  clearToken,
+  getToken,
+  isSystemAdmin,
+  setToken,
+  type Member,
+} from './api';
 import { JoinPage } from './JoinPage';
 import { HomePage } from './HomePage';
+import { AdminPage } from './AdminPage';
+import { AdminLoginPage } from './AdminLoginPage';
 
 function parseInviteCode(pathname: string): string | null {
   const match = pathname.match(/^\/i\/([^/?#]+)/);
@@ -23,32 +33,60 @@ function parseLinkToken(pathname: string): string | null {
   }
 }
 
-/**
- * 轻量路由（无额外依赖）：
- * - /c/:token      → 专属打卡链接（地址栏即链接，持有即本人，可收藏）
- * - /i/:inviteCode → 邀请加入页（注册 / 找回）
- * - 已登录但地址栏非 /c/... → 自动规范化到专属链接
- */
+function isAdminPath(pathname: string): boolean {
+  return /^\/admin\/?$/.test(pathname);
+}
+
 export function App() {
   const [token, setTokenState] = useState<string | null>(() => getToken());
   const [justJoined, setJustJoined] = useState(false);
+  const [me, setMe] = useState<Member | null>(null);
+  const [booting, setBooting] = useState<boolean>(() => Boolean(getToken()));
 
-  // /c/:token 访问 → 提取并持久化 token（URL 保持不变）
+  // /c/:token → 提取并持久化 token（URL 保持不变）
   useEffect(() => {
     const linkToken = parseLinkToken(window.location.pathname);
     if (linkToken && linkToken !== token) {
       setToken(linkToken);
       setTokenState(linkToken);
     }
-    // 仅在挂载时处理一次
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 已登录但地址栏不是专属链接 → 规范化到 /c/:token
+  // 已登录但地址栏非 /c/... → 规范化到专属链接
   useEffect(() => {
-    if (token && !parseLinkToken(window.location.pathname)) {
+    if (token && !parseLinkToken(window.location.pathname) && !isAdminPath(window.location.pathname)) {
       window.history.replaceState(null, '', `/c/${token}`);
     }
+  }, [token]);
+
+  // 拉取当前成员，区分 系统管理员 / 普通成员
+  useEffect(() => {
+    if (!token) {
+      setMe(null);
+      setBooting(false);
+      return;
+    }
+    let cancelled = false;
+    setBooting(true);
+    api
+      .me()
+      .then((res) => {
+        if (!cancelled) setMe(res.member);
+      })
+      .catch((err) => {
+        if (!cancelled && err instanceof ApiError && err.status === 401) {
+          clearToken();
+          setTokenState(null);
+          window.history.replaceState(null, '', '/');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setBooting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   const handleJoined = useCallback((newToken: string) => {
@@ -58,14 +96,31 @@ export function App() {
     window.history.replaceState(null, '', `/c/${newToken}`);
   }, []);
 
+  const handleAdminLoggedIn = useCallback((newToken: string) => {
+    setToken(newToken);
+    setTokenState(newToken);
+    window.history.replaceState(null, '', `/c/${newToken}`);
+  }, []);
+
   const handleLogout = useCallback(() => {
     clearToken();
     setTokenState(null);
+    setMe(null);
     setJustJoined(false);
     window.history.replaceState(null, '', '/');
   }, []);
 
   if (token) {
+    if (booting || !me) {
+      return (
+        <main className="page">
+          <p className="hint">加载中…</p>
+        </main>
+      );
+    }
+    if (isSystemAdmin(me)) {
+      return <AdminPage onLogout={handleLogout} />;
+    }
     return (
       <HomePage
         onLogout={handleLogout}
@@ -73,6 +128,10 @@ export function App() {
         onDismissJoinHint={() => setJustJoined(false)}
       />
     );
+  }
+
+  if (isAdminPath(window.location.pathname)) {
+    return <AdminLoginPage onLoggedIn={handleAdminLoggedIn} />;
   }
 
   const inviteCode = parseInviteCode(window.location.pathname);

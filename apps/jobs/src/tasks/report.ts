@@ -5,6 +5,7 @@ import {
   currentCheckinDay,
   isStreakMilestone,
   wallClock,
+  SYSTEM_GROUP_ID,
   type WallClock,
 } from '@healthy-life/shared';
 import { getCheckin, listCheckinsForMember, listGroups, listMembers } from '@healthy-life/db';
@@ -47,6 +48,7 @@ export async function runReport(deps: JobDeps): Promise<void> {
   let missing = 0;
 
   for (const group of listGroups(db)) {
+    if (group.id === SYSTEM_GROUP_ID) continue; // 跳过系统群
     const members = listMembers(db, group.id).filter((m) => m.status === 'active');
 
     for (const member of members) {

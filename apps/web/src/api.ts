@@ -23,6 +23,21 @@ export interface Member {
   createdAt: string;
 }
 
+export const SYSTEM_GROUP_ID = '__system__';
+
+export function isSystemAdmin(m: Member): boolean {
+  return m.groupId === SYSTEM_GROUP_ID && m.role === 'admin';
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  inviteCode: string;
+  timezone: string;
+  visibility: 'exact' | 'presence';
+  createdAt: string;
+}
+
 export interface Checkin {
   id: string;
   memberId: string;
@@ -232,4 +247,26 @@ export const api = {
   stats: () => request<StatsResponse>('/stats'),
   recordEvent: (type: string, payload?: unknown) =>
     request<RecordEventResponse>('/events', { method: 'POST', body: { type, payload } }),
+  adminLogin: (password: string) =>
+    request<{ member: Member; token: string; link: string }>('/admin/login', {
+      method: 'POST',
+      body: { password },
+    }),
+  adminChangePassword: (oldPassword: string, newPassword: string) =>
+    request<{ member: Member | null; token: string; link: string }>('/admin/password', {
+      method: 'PATCH',
+      body: { oldPassword, newPassword },
+    }),
+  listGroups: () => request<{ groups: Group[] }>('/groups'),
+  createGroup: (name: string) =>
+    request<{ group: Group }>('/groups', { method: 'POST', body: { name } }),
+  listRoomMembers: (groupId: string) =>
+    request<{ group: string; members: Member[] }>(`/groups/${groupId}/members`),
+  removeMember: (groupId: string, memberId: string) =>
+    request<{ ok: boolean }>(`/groups/${groupId}/members/${memberId}`, { method: 'DELETE' }),
+  resetMemberPassword: (groupId: string, memberId: string, password?: string) =>
+    request<{ member: Member | null; link: string; password?: string }>(
+      `/groups/${groupId}/members/${memberId}/reset`,
+      { method: 'POST', body: { password } },
+    ),
 };
