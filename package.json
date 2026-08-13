@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -b && pnpm --filter @healthy-life/web build",
     "typecheck": "tsc -b",
-    "test": "vitest run",
+    "test": "mkdir -p .tmp && TMPDIR=\"$PWD/.tmp\" vitest run",
     "dev:server": "pnpm --filter @healthy-life/server dev",
     "dev:web": "pnpm --filter @healthy-life/web dev",
     "dev:jobs": "pnpm --filter @healthy-life/jobs dev"

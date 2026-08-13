@@ -52,3 +52,28 @@ export function getGroupByInviteCode(db: Db, inviteCode: string): Group | undefi
     | undefined;
   return row ? toGroup(row) : undefined;
 }
+
+/** 更新群设置（name / timezone / visibility）。v1 不轮换 inviteCode。 */
+export function updateGroup(
+  db: Db,
+  id: string,
+  patch: Partial<Pick<Group, 'name' | 'timezone' | 'visibility'>>,
+): Group | undefined {
+  const fields: string[] = [];
+  const params: Record<string, unknown> = { id };
+  if (patch.name !== undefined) {
+    fields.push('name = @name');
+    params.name = patch.name;
+  }
+  if (patch.timezone !== undefined) {
+    fields.push('timezone = @timezone');
+    params.timezone = patch.timezone;
+  }
+  if (patch.visibility !== undefined) {
+    fields.push('visibility = @visibility');
+    params.visibility = patch.visibility;
+  }
+  if (fields.length === 0) return getGroupById(db, id);
+  db.prepare(`UPDATE groups SET ${fields.join(', ')} WHERE id = @id`).run(params);
+  return getGroupById(db, id);
+}

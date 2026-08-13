@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
+import { toPublicMember } from '../lib/serialize';
 
 /**
  * 示例路由：返回当前登录成员。
@@ -7,4 +8,4 @@ import type { Env } from '../types';
  */
 export const meRoutes = new Hono<Env>();
 
-meRoutes.get('/me', (c) => c.json({ member: c.get('member') }));
+meRoutes.get('/me', (c) => c.json({ member: toPublicMember(c.get('member')) }));
