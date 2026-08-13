@@ -20,7 +20,7 @@ ntfy 是**单向推送**（服务端 → 成员手机），负责：
 - **订阅链接从打卡页获取**：`GET /api/v1/me` 返回 `notifySubscribeUrl = NTFY_BASE_URL/<topic>`，打卡页展示「开启通知」按钮指向该链接（ntfy 网页/App 内订阅）。
 - **启用/禁用**：`PATCH /api/v1/me { notifyEnabled }` 控制服务端是否向该成员推送；关闭后 jobs 跳过，但**不会**代用户从 ntfy App 退订（退订需用户在 App 里操作）。
 - **手动测试推送**：`POST /api/v1/notify/test` 向自己 topic 发一条测试通知，打卡页提供「发送测试通知」按钮，供用户自行验证推送配置。
-- **使用说明外链**：打卡页附「ntfy 怎么用」外链，指向仓库内的中文指南 `docs/ntfy-guide.md`（覆盖 App / 网页 / 桌面端订阅方式，朋友是中文用户）。
+- **使用说明外链**：打卡页附「ntfy 怎么用」外链，指向站内中文指南页 `/ntfy-guide.html`（源文件 `apps/web/public/ntfy-guide.html`，覆盖 App / 网页 / 桌面端订阅方式，朋友是中文用户；同域托管，国内访问稳定）。
 - 日报/周报（晨报）仍走共享 `{report}` topic，个性化推送暂缓。
 - 按个人目标时间做**个性化提醒时机**（在各自目标前 N 分钟推送）仍属 Phase 2.4，暂未实现。
 

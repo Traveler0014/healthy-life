@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#241b30" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>ntfy 使用指南 · 早睡打卡</title>
+    <style>
+      :root {
+        --bg: #241b30;
+        --card: #332741;
+        --card-border: #46375a;
+        --text: #f6efe3;
+        --muted: #c8bcd8;
+        --accent: #f2a65a;
+        --early: #8fd99a;
+        --radius: 18px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .page { max-width: 640px; margin: 0 auto; padding: 24px 18px 48px; }
+      h1 { font-size: 24px; margin: 8px 0 4px; }
+      .subtitle { color: var(--muted); margin: 0 0 20px; font-size: 15px; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        margin-top: 14px;
+      }
+      .card h2 { margin: 0 0 10px; font-size: 18px; }
+      .card p, .card li { font-size: 15px; }
+      .card ul, .card ol { margin: 8px 0; padding-left: 22px; }
+      .card li { margin: 6px 0; }
+      a { color: var(--accent); }
+      .tip {
+        background: rgba(242, 166, 90, 0.12);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-top: 10px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .back { display: inline-block; margin-top: 20px; font-size: 15px; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>🌙 ntfy 使用指南</h1>
+      <p class="subtitle">「早睡打卡」通过 ntfy 给你发睡前提醒。收到提醒前，需要先在你的设备上订阅一次。</p>
+
+      <div class="card">
+        <h2>📱 手机 App（推荐，长期使用）</h2>
+        <ol>
+          <li>安装 ntfy App：Android 在 Google Play 搜「ntfy」（或打开 <a href="https://ntfy.sh/app" target="_blank" rel="noreferrer">ntfy.sh/app</a>）；iOS 在 App Store 搜「ntfy」。</li>
+          <li>回到打卡页，点「订阅 ntfy 提醒」按钮（自动打开你的专属订阅链接）。</li>
+          <li>在打开的页面点「Subscribe / 订阅」确认即可。</li>
+        </ol>
+        <div class="tip">手机上点订阅链接时，系统若提示「用 ntfy 打开」，选允许即可直接跳进 App。</div>
+      </div>
+
+      <div class="card">
+        <h2>🌐 网页（无需安装）</h2>
+        <ol>
+          <li>用浏览器打开打卡页的「订阅 ntfy 提醒」链接。</li>
+          <li>点页面上的「Subscribe」按钮。</li>
+          <li>浏览器询问是否允许通知 → 点「允许」。</li>
+        </ol>
+        <div class="tip">网页订阅需要浏览器一直开着，关掉就收不到了；长期使用建议装 App。</div>
+      </div>
+
+      <div class="card">
+        <h2>🖥 桌面端</h2>
+        <p>用浏览器订阅即可（同网页方式），或自行安装 ntfy 桌面客户端。</p>
+      </div>
+
+      <div class="card">
+        <h2>订阅后</h2>
+        <ul>
+          <li>每晚提醒时间（默认 22:30）会收到一条温和提醒，点一下回到打卡页「我睡了」打卡。</li>
+          <li>想验证配置：回打卡页点「发送测试通知」，收到一条测试消息即表示成功。</li>
+          <li>不想收了：回打卡页把「睡前提醒」开关关掉即可。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>收不到通知？</h2>
+        <ol>
+          <li>确认手机 ntfy App 已安装，且订阅链接里是你的专属 topic（每个人不一样）。</li>
+          <li>确认手机系统允许 ntfy 发送通知（通知权限）。</li>
+          <li>确认打卡页「睡前提醒」开关是开启状态。</li>
+          <li>点「发送测试通知」验证：仍收不到说明配置有问题。</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>英文官方文档（进阶参考）</h2>
+        <ul>
+          <li>手机订阅：<a href="https://docs.ntfy.sh/subscribe/phone/" target="_blank" rel="noreferrer">docs.ntfy.sh/subscribe/phone</a></li>
+          <li>网页订阅：<a href="https://docs.ntfy.sh/subscribe/web/" target="_blank" rel="noreferrer">docs.ntfy.sh/subscribe/web</a></li>
+        </ul>
+      </div>
+
+      <a class="back" href="/">← 返回打卡页</a>
+    </main>
+  </body>
+</html>
