@@ -15,7 +15,7 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。首位成员自动 admin |
+| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。首位成员自动 admin |
 | GET | `/api/v1/me` | ✅ 返回当前成员（不含 tokenHash） |
 | PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 |
 
@@ -23,9 +23,9 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/checkin` | ✅ 打卡（记录当前时刻，date 由服务端按群时区算）。幂等：同一天重复调用=更新。返回 `{ checkin, outcome: 'early'\|'late', message }` |
+| POST | `/api/v1/checkin` | ✅ 打卡（记录当前时刻，body 带 `timezone`，date 由服务端按该时区算）。幂等：同一天重复调用=更新。返回 `{ checkin, outcome: 'early'\|'late', message }` |
 | GET | `/api/v1/checkin/today` | ✅ 今晚我的打卡状态（未打/已打+时间+outcome） |
-| GET | `/api/v1/board` | ✅ 今日打卡墙（按群 visibility 返回精确时间或仅状态） |
+| GET | `/api/v1/board` | ✅ 今日打卡墙（按群 visibility 返回精确时间或仅状态）。每成员按各自时区算「今天」，返回 `timezone` / `checkedInAtLocal` / `checkedInAt` |
 | POST | `/api/v1/events` | ✅ 记录原始事件 `{ type, payload? }`（如 `visit_after_checkin`），追加不覆盖 |
 | GET | `/api/v1/prompts/random` | 领一道睡前思考题（Phase 3，未实现） |
 

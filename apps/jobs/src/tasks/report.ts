@@ -47,24 +47,26 @@ export async function runReport(deps: JobDeps): Promise<void> {
   let missing = 0;
 
   for (const group of listGroups(db)) {
-    const yesterday = addDays(currentCheckinDay(group.timezone), -1);
     const members = listMembers(db, group.id).filter((m) => m.status === 'active');
 
     for (const member of members) {
+      // 每人自己的「昨晚」：按各自最近时区算
+      const yesterday = addDays(currentCheckinDay(member.lastTimezone || group.timezone), -1);
       const yesterdayCheckin = getCheckin(db, member.id, yesterday);
+      const tz = yesterdayCheckin?.timezone ?? member.lastTimezone ?? group.timezone;
       const outcome = classifyNight({
         checkedInAt: yesterdayCheckin?.checkedInAt ?? null,
         targetBedtime: member.targetBedtime,
-        timezone: group.timezone,
+        timezone: tz,
       });
 
       if (outcome === 'early') {
         recorded += 1;
-        const wc = wallClock(group.timezone, new Date(yesterdayCheckin!.checkedInAt));
+        const wc = wallClock(tz, new Date(yesterdayCheckin!.checkedInAt));
         earlyLines.push(earlyCheckinMessage(member.nickname, formatHm(wc)));
       } else if (outcome === 'late') {
         recorded += 1;
-        const wc = wallClock(group.timezone, new Date(yesterdayCheckin!.checkedInAt));
+        const wc = wallClock(tz, new Date(yesterdayCheckin!.checkedInAt));
         lateLines.push(
           lateCheckinMessage(
             member.nickname,
@@ -85,7 +87,7 @@ export async function runReport(deps: JobDeps): Promise<void> {
               classifyNight({
                 checkedInAt: c.checkedInAt,
                 targetBedtime: member.targetBedtime,
-                timezone: group.timezone,
+                timezone: c.timezone,
               }) === 'early',
           )
           .map((c) => c.date);

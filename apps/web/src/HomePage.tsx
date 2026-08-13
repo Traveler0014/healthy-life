@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   api,
   ApiError,
+  formatRelative,
+  getBrowserTimezone,
+  timezoneName,
   type BoardResponse,
   type CheckinResponse,
   type Member,
@@ -53,6 +56,8 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       // 忽略复制失败（例如非 https 环境）
     }
   }
+
+  const viewerTz = getBrowserTimezone();
 
   const loadData = useCallback(async () => {
     setError(null);
@@ -182,22 +187,35 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
         <section className="card">
           <h2>今日打卡墙</h2>
           <ul className="board">
-            {board.members.map((m) => (
-              <li key={m.memberId} className={`board-item ${m.checkedIn ? 'done' : ''}`}>
-                <span className="board-emoji">{m.emoji}</span>
-                <span className="board-name">
-                  {m.nickname}
-                  {m.memberId === me?.id && <em className="me">我</em>}
-                </span>
-                <span className="board-state">
-                  {m.checkedIn
-                    ? board.visibility === 'exact' && m.checkedInAt
-                      ? formatTime(m.checkedInAt)
-                      : '已打卡'
-                    : '还没睡'}
-                </span>
-              </li>
-            ))}
+            {board.members.map((m) => {
+              const isDiffTz = Boolean(m.timezone && m.timezone !== viewerTz);
+              return (
+                <li key={m.memberId} className={`board-item ${m.checkedIn ? 'done' : ''}`}>
+                  <span className="board-emoji">{m.emoji}</span>
+                  <span className="board-name">
+                    {m.nickname}
+                    {m.memberId === me?.id && <em className="me">我</em>}
+                  </span>
+                  <span className="board-state">
+                    {m.checkedIn
+                      ? board.visibility === 'exact' && m.checkedInAtLocal
+                        ? (
+                            <>
+                              {m.checkedInAtLocal}
+                              {isDiffTz && (
+                                <span className="tz-hint">
+                                  {' '}· {timezoneName(m.timezone!)}
+                                  {m.checkedInAt ? ` · ${formatRelative(m.checkedInAt)}` : ''}
+                                </span>
+                              )}
+                            </>
+                          )
+                        : '已打卡'
+                      : '还没睡'}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

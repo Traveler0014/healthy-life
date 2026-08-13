@@ -4,9 +4,10 @@
 
 ## 1. 打卡日与日切边界
 
-- 一个「打卡日」从**每日 05:00（群时区）**开始，到次日 04:59 结束。
+- 一个「打卡日」从**每日 05:00（打卡设备的当地时区）**开始，到次日 04:59 结束。
 - 即：凌晨 04:30 打卡仍归「昨晚」，05:30 起算「今天」。
-- 实现用 `shared/day.currentCheckinDay(tz, now, boundaryHour=5)`，边界小时可配（`DAY_BOUNDARY_HOUR`）。
+- **跨时区**：时区以「打卡那一刻设备所在地」为准，不绑人、不绑群（旅行自适应）。
+- 实现用 `shared/day.currentCheckinDay(tz, now, boundaryHour=5)`，`tz` 取打卡时前端上报的 IANA 时区。
 
 ## 2. 一夜的三种结果（classifyNight）
 
@@ -18,6 +19,7 @@
 
 - `targetBedtime` 是**每人自己设**的目标（默认 `23:00`），不是群统一时间。
 - 判定用 `shared/sleep.classifyNight`。
+- **目标就寝时间是「本地时间锚点」**：跟着人走，跨时区/旅行不变；判定时区用打卡记录自带的 `timezone`。
 
 ## 3. 打卡（check-in）
 

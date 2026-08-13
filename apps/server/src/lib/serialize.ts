@@ -10,6 +10,7 @@ export function toPublicMember(m: Member): PublicMember {
     nickname: m.nickname,
     emoji: m.emoji,
     targetBedtime: m.targetBedtime,
+    lastTimezone: m.lastTimezone,
     role: m.role,
     status: m.status,
     createdAt: m.createdAt,

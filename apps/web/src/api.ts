@@ -62,8 +62,12 @@ export interface BoardEntry {
   nickname: string;
   emoji: string;
   checkedIn: boolean;
-  /** 仅 visibility === 'exact' 且已打卡时存在 */
+  /** 该成员当前时区（IANA） */
+  timezone?: string;
+  /** 原始打卡 ISO 时间戳（用于相对时间显示） */
   checkedInAt?: string;
+  /** 仅 visibility === 'exact' 且已打卡时存在，已按该成员时区格式化（HH:mm） */
+  checkedInAtLocal?: string;
 }
 
 export interface BoardResponse {
@@ -105,6 +109,39 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+export function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
+  } catch {
+    return 'Asia/Shanghai';
+  }
+}
+
+export function timezoneName(tz: string): string {
+  try {
+    const part = new Intl.DateTimeFormat('zh-CN', { timeZone: tz, timeZoneName: 'short' })
+      .formatToParts(new Date())
+      .find((p) => p.type === 'timeZoneName');
+    return part?.value ?? tz;
+  } catch {
+    return tz;
+  }
+}
+
+/** 相对时间：刚刚 / X分钟前 / X小时前 / X天前（跨时区友好） */
+export function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const minutes = Math.floor((Date.now() - then) / 60000);
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}小时前`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}天前`;
+  return new Date(iso).toLocaleDateString('zh-CN');
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -144,9 +181,17 @@ export const api = {
     password: string;
     targetBedtime?: string;
     emoji?: string;
-  }) => request<JoinResponse>('/join', { method: 'POST', body }),
+  }) =>
+    request<JoinResponse>('/join', {
+      method: 'POST',
+      body: { ...body, timezone: getBrowserTimezone() },
+    }),
   me: () => request<MeResponse>('/me'),
-  checkin: () => request<CheckinResponse>('/checkin', { method: 'POST' }),
+  checkin: () =>
+    request<CheckinResponse>('/checkin', {
+      method: 'POST',
+      body: { timezone: getBrowserTimezone() },
+    }),
   today: () => request<TodayResponse>('/checkin/today'),
   board: () => request<BoardResponse>('/board'),
   stats: () => request<StatsResponse>('/stats'),

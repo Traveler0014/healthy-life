@@ -17,10 +17,11 @@ export async function runReminder(deps: JobDeps): Promise<void> {
 
   let sent = 0;
   for (const group of listGroups(db)) {
-    const today = currentCheckinDay(group.timezone);
     const members = listMembers(db, group.id).filter((m) => m.status === 'active');
 
     for (const member of members) {
+      // 每人自己的「今晚」：按各自最近时区算
+      const today = currentCheckinDay(member.lastTimezone || group.timezone);
       if (getCheckin(db, member.id, today)) continue;
 
       await notify.publish(config.ntfyTopicReminder, reminderMessage(member.nickname, member.targetBedtime), {

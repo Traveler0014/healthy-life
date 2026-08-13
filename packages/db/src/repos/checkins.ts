@@ -7,6 +7,7 @@ interface CheckinRow {
   member_id: string;
   date: string;
   checked_in_at: string;
+  timezone: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,28 +18,31 @@ function toCheckin(r: CheckinRow): Checkin {
     memberId: r.member_id,
     date: r.date,
     checkedInAt: r.checked_in_at,
+    timezone: r.timezone,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
 }
 
-/** 幂等写入：同一成员同一打卡日只有一条，重复调用更新打卡时间。 */
+/** 幂等写入：同一成员同一打卡日只有一条，重复调用更新打卡时间与时区。 */
 export function upsertCheckin(
   db: Db,
-  input: { memberId: string; date: string; checkedInAt: string },
+  input: { memberId: string; date: string; checkedInAt: string; timezone?: string },
 ): Checkin {
   const now = new Date().toISOString();
   db.prepare(
-    `INSERT INTO checkins (id, member_id, date, checked_in_at, created_at, updated_at)
-     VALUES (@id, @memberId, @date, @checkedInAt, @createdAt, @updatedAt)
+    `INSERT INTO checkins (id, member_id, date, checked_in_at, timezone, created_at, updated_at)
+     VALUES (@id, @memberId, @date, @checkedInAt, @timezone, @createdAt, @updatedAt)
      ON CONFLICT (member_id, date) DO UPDATE SET
        checked_in_at = excluded.checked_in_at,
+       timezone = excluded.timezone,
        updated_at = excluded.updated_at`,
   ).run({
     id: randomUUID(),
     memberId: input.memberId,
     date: input.date,
     checkedInAt: input.checkedInAt,
+    timezone: input.timezone ?? 'Asia/Shanghai',
     createdAt: now,
     updatedAt: now,
   });

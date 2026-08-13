@@ -11,6 +11,7 @@ interface MemberRow {
   token_hash: string;
   password_hash: string;
   password_salt: string;
+  last_timezone: string;
   role: Role;
   status: string;
   created_at: string;
@@ -26,6 +27,7 @@ function toMember(r: MemberRow): Member {
     tokenHash: r.token_hash,
     passwordHash: r.password_hash,
     passwordSalt: r.password_salt,
+    lastTimezone: r.last_timezone,
     role: r.role,
     status: r.status as Member['status'],
     createdAt: r.created_at,
@@ -42,13 +44,14 @@ export function createMember(
     tokenHash: string;
     passwordHash: string;
     passwordSalt: string;
+    lastTimezone?: string;
     role?: Role;
   },
 ): Member {
   const createdAt = new Date().toISOString();
   db.prepare(
-    `INSERT INTO members (id, group_id, nickname, emoji, target_bedtime, token_hash, password_hash, password_salt, role, status, created_at)
-     VALUES (@id, @groupId, @nickname, @emoji, @targetBedtime, @tokenHash, @passwordHash, @passwordSalt, @role, 'active', @createdAt)`,
+    `INSERT INTO members (id, group_id, nickname, emoji, target_bedtime, token_hash, password_hash, password_salt, last_timezone, role, status, created_at)
+     VALUES (@id, @groupId, @nickname, @emoji, @targetBedtime, @tokenHash, @passwordHash, @passwordSalt, @lastTimezone, @role, 'active', @createdAt)`,
   ).run({
     id: randomUUID(),
     groupId: input.groupId,
@@ -58,6 +61,7 @@ export function createMember(
     tokenHash: input.tokenHash,
     passwordHash: input.passwordHash,
     passwordSalt: input.passwordSalt,
+    lastTimezone: input.lastTimezone ?? 'Asia/Shanghai',
     role: input.role ?? 'member',
     createdAt,
   });
@@ -93,7 +97,7 @@ export function listMembers(db: Db, groupId: string): Member[] {
 export function updateMember(
   db: Db,
   id: string,
-  patch: Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'role' | 'status'>>,
+  patch: Partial<Pick<Member, 'nickname' | 'emoji' | 'targetBedtime' | 'lastTimezone' | 'role' | 'status'>>,
 ): Member | undefined {
   const fields: string[] = [];
   const params: Record<string, unknown> = { id };
@@ -108,6 +112,10 @@ export function updateMember(
   if (patch.targetBedtime !== undefined) {
     fields.push('target_bedtime = @targetBedtime');
     params.targetBedtime = patch.targetBedtime;
+  }
+  if (patch.lastTimezone !== undefined) {
+    fields.push('last_timezone = @lastTimezone');
+    params.lastTimezone = patch.lastTimezone;
   }
   if (patch.role !== undefined) {
     fields.push('role = @role');

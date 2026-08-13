@@ -23,7 +23,7 @@ export function statsRoutes(deps: AppDeps): Hono<Env> {
       const outcome = classifyNight({
         checkedInAt: ci.checkedInAt,
         targetBedtime: member.targetBedtime,
-        timezone: group.timezone,
+        timezone: ci.timezone,
       });
       if (outcome === 'early') earlyDays += 1;
       else if (outcome === 'late') lateDays += 1;

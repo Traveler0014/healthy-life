@@ -35,6 +35,10 @@ export function joinRoutes(deps: AppDeps): Hono<Env> {
       typeof body?.targetBedtime === 'string' ? body.targetBedtime.trim() : '';
     const emoji =
       typeof body?.emoji === 'string' && body.emoji.trim() !== '' ? body.emoji.trim() : undefined;
+    const timezone =
+      typeof body?.timezone === 'string' && body.timezone.trim() !== ''
+        ? body.timezone.trim()
+        : undefined;
 
     if (!inviteCode || !nickname) {
       return c.json({ error: 'inviteCode and nickname are required' }, 400);
@@ -75,6 +79,7 @@ export function joinRoutes(deps: AppDeps): Hono<Env> {
       tokenHash: sha256(linkToken),
       passwordHash: hashPassword(password, passwordSalt),
       passwordSalt,
+      lastTimezone: timezone,
     });
 
     // 首位成员自动成为 admin（建群者即组织者）。

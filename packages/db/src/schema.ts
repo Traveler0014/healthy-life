@@ -50,3 +50,8 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_member_date ON events(member_id, date);
 `;
+
+export const SCHEMA_V3 = `
+ALTER TABLE checkins ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai';
+ALTER TABLE members ADD COLUMN last_timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai';
+`;
