@@ -14,11 +14,11 @@
 
 | # | 任务 | 包 | 依赖 | 验收 |
 |---|---|---|---|---|
-| 1.1 | join / me / checkin / board / stats 接口 | server | db, shared | 邀请码加入→拿 token→打卡→返回 early/late 回执 |
-| 1.2 | 邀请链接页 + 打卡页（一键按钮 + 回执 + 打卡墙） | web | 1.1 | 手机上「加入→打卡→看到回执与打卡墙」全程 <3 步 |
-| 1.3 | 睡前提醒任务 | jobs | notify | 定时向 reminder topic 推送 |
-| 1.4 | 晨报任务（结算昨晚：早/晚、隐藏 streak、奖励揭示） | jobs | db, shared | 晨报正确汇总，达标时推送奖牌 |
-| 1.5 | 部署到 VPS（systemd + 反代 + HTTPS 或 Cloudflare Tunnel） | ops | 全部 | 朋友可用手机公网访问 + 收到 ntfy |
+| 1.1 | ✅ join / me / checkin / board / stats 接口 | server | db, shared | 邀请码加入→拿 token→打卡→返回 early/late 回执 |
+| 1.2 | ✅ 邀请链接页 + 打卡页（一键按钮 + 回执 + 打卡墙） | web | 1.1 | 手机上「加入→打卡→看到回执与打卡墙」全程 <3 步 |
+| 1.3 | ✅ 睡前提醒任务 | jobs | notify | 定时向 reminder topic 推送 |
+| 1.4 | ✅ 晨报任务（结算昨晚：早/晚、隐藏 streak、奖励揭示） | jobs | db, shared | 晨报正确汇总，达标时推送奖牌 |
+| 1.5 | ⬜ 部署到 VPS（systemd + 反代 + HTTPS 或 Cloudflare Tunnel） | ops | 全部 | 朋友可用手机公网访问 + 收到 ntfy |
 
 并行建议：1.1 与 1.3 可并行（都依赖 shared/db/notify 已就绪）；1.2 依赖 1.1；1.4 依赖 1.1 的数据；1.5 最后。
 

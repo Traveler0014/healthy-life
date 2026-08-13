@@ -1,0 +1,358 @@
+:root {
+  --bg: #241b30;
+  --bg-soft: #2e233d;
+  --card: #332741;
+  --card-border: #46375a;
+  --text: #f6efe3;
+  --text-muted: #c8bcd8;
+  --accent: #f2a65a;
+  --accent-strong: #e8923d;
+  --early: #8fd99a;
+  --late: #f2c07a;
+  --missing: #a99ec0;
+  --danger: #f28b8b;
+  --radius: 18px;
+  --shadow: 0 10px 30px rgba(10, 6, 18, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 18px 48px;
+}
+
+h1 {
+  margin: 12px 0 6px;
+  font-size: 26px;
+  line-height: 1.3;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+.hint.small {
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- 顶部栏 ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px 16px;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ---------- 按钮 ---------- */
+.button {
+  font: inherit;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: transform 0.05s ease, opacity 0.15s ease;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: #2a1b0a;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 14px 20px;
+  width: 100%;
+}
+
+.button.ghost {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.checkin-button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #2a1b0a;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 2px;
+  width: 100%;
+  min-height: 120px;
+  border-radius: 28px;
+  box-shadow: 0 12px 30px rgba(242, 166, 90, 0.35);
+  margin-top: 8px;
+}
+
+/* ---------- 加入页 ---------- */
+.join-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.join-card {
+  width: 100%;
+}
+
+.join-emoji {
+  font-size: 44px;
+  text-align: center;
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.field input {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 18px;
+  width: 100%;
+}
+
+.field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.field small {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 15px;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+/* ---------- 打卡区 ---------- */
+.checkin-section {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.greeting {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.target {
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.receipt {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.receipt.early {
+  background: rgba(143, 217, 154, 0.15);
+  color: var(--early);
+}
+
+.receipt.late {
+  background: rgba(242, 192, 122, 0.14);
+  color: var(--late);
+}
+
+/* ---------- 今晚状态 ---------- */
+.today-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+}
+
+.status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.early {
+  background: var(--early);
+}
+
+.status-dot.late {
+  background: var(--late);
+}
+
+.status-dot.missing {
+  background: var(--missing);
+}
+
+/* ---------- 打卡墙 ---------- */
+.board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.board-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-soft);
+  border-radius: 14px;
+  font-size: 17px;
+}
+
+.board-item.done {
+  border: 1px solid rgba(143, 217, 154, 0.35);
+}
+
+.board-emoji {
+  font-size: 22px;
+}
+
+.board-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.board-name .me {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--accent);
+  background: rgba(242, 166, 90, 0.15);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+
+.board-state {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.board-item.done .board-state {
+  color: var(--early);
+}
+
+/* ---------- 统计 ---------- */
+.stats {
+  display: flex;
+  gap: 14px;
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+  background: var(--bg-soft);
+  border-radius: 16px;
+  padding: 18px 12px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- 落地页 ---------- */
+.landing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.landing .card {
+  width: 100%;
+  text-align: center;
+}

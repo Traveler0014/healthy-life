@@ -30,8 +30,20 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', statsRoutes(deps)); // GET /stats
   app.route('/api/v1', groupRoutes(deps)); // 群管理（admin）
 
-  // 托管 web 构建产物（SPA）
-  app.use('*', serveStatic({ root: resolve(process.cwd(), 'apps/web/dist') }));
+  // 托管 web 构建产物（SPA）。
+  // 前端路由（如 /i/<inviteCode>）在 dist 下没有对应文件，需要回退到 index.html。
+  app.use(
+    '*',
+    serveStatic({
+      root: resolve(process.cwd(), 'apps/web/dist'),
+      rewriteRequestPath: (path) => {
+        // API 由前面的路由处理；带扩展名的是真实静态资源；其余回退到 index.html（SPA）
+        if (path.startsWith('/api/')) return path;
+        if (path === '/' || !/\.[a-zA-Z0-9]+$/.test(path)) return '/index.html';
+        return path;
+      },
+    }),
+  );
 
   return app;
 }
