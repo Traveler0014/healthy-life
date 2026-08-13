@@ -23,7 +23,7 @@ export function eventRoutes(deps: AppDeps): Hono<Env> {
     const event = recordEvent(deps.db, {
       memberId: member.id,
       type,
-      date: currentCheckinDay(group.timezone),
+      date: currentCheckinDay(member.lastTimezone || group.timezone),
       occurredAt: new Date().toISOString(),
       payload: body?.payload,
     });

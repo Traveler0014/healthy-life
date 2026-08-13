@@ -4,18 +4,18 @@
 
 - 前缀 `/api/v1`，除特别说明外**全部需鉴权**：请求头 `Authorization: Bearer <member token>`
 - 响应统一 JSON；错误 `{ "error": "..." }` + 对应状态码（401 未登录 / 403 无权限 / 404 / 400 / 500）
-- 时间字段一律 ISO 8601；「日期」一律 `YYYY-MM-DD`（群时区打卡日）
+- 时间字段一律 ISO 8601；「日期」一律 `YYYY-MM-DD`（成员各自时区的打卡日）
 
 ## Phase 1 端点（✅ 已实现）
 
-> 公开端点（无需鉴权，注册在 authMiddleware 之前）：`POST /api/v1/join`、`POST /api/v1/groups`。
-> **首位加入某群的成员自动成为该群 admin**（建群者即组织者，免 seed 脚本）。
+> 公开端点（无需鉴权）：`POST /api/v1/join`、`POST /api/v1/admin/login`。
+> **管理员是部署时预置的系统账号**（用户名 `admin`、默认口令 `ADMIN_PASSWORD`），不属于任何房间、不出现在打卡墙。
 
 ### 鉴权 / 加入
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。首位成员自动 admin |
+| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。新成员一律 `member` |
 | GET | `/api/v1/me` | ✅ 返回当前成员（不含 tokenHash） |
 | PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 |
 
@@ -37,14 +37,19 @@
 | GET | `/api/v1/report/monthly?month=YYYY-MM` | 月报数据（Phase 2，未实现） |
 | GET | `/api/v1/report/yearly?year=YYYY` | 年报数据（Phase 2，未实现） |
 
-### 群（建群公开，其余需 admin）
+### 管理员（系统级，均需 admin 鉴权）
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/groups` | ✅ 公开。建群（服务端生成 inviteCode，返回 `{ group }`） |
-| GET | `/api/v1/groups/:id/members` | ✅ admin。成员列表 |
-| POST | `/api/v1/groups/:id/invites` | ✅ admin。幂等返回现有 `inviteCode` + 完整链接（v1 不轮换） |
-| PATCH | `/api/v1/groups/:id` | ✅ admin。改群设置（name / timezone / visibility） |
+| POST | `/api/v1/admin/login` | ✅ 公开。`{ password }` → 返回管理员专属链接 |
+| PATCH | `/api/v1/admin/password` | ✅ `{ oldPassword, newPassword }` 改口令，改后重新派生链接 |
+| GET | `/api/v1/groups` | ✅ 房间列表（排除系统群） |
+| POST | `/api/v1/groups` | ✅ 建房间（服务端生成 inviteCode） |
+| GET | `/api/v1/groups/:id/members` | ✅ 成员列表 |
+| POST | `/api/v1/groups/:id/invites` | ✅ 幂等返回邀请码 + 完整链接 |
+| PATCH | `/api/v1/groups/:id` | ✅ 改房间设置（name / timezone / visibility） |
+| DELETE | `/api/v1/groups/:id/members/:memberId` | ✅ 移除成员（连带其记录） |
+| POST | `/api/v1/groups/:id/members/:memberId/reset` | ✅ 重设成员口令（兜底找回），返回新链接 |
 
 ## 身份与鉴权
 

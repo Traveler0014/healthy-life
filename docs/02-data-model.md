@@ -48,7 +48,7 @@
 | id | TEXT PK | uuid |
 | member_id | TEXT FK | |
 | type | TEXT | 开放类型：`visit_after_checkin`、`prompt_claimed` 等 |
-| date | TEXT | 打卡日 `YYYY-MM-DD`（群时区） |
+| date | TEXT | 打卡日 `YYYY-MM-DD`（成员最近时区） |
 | occurred_at | TEXT | 事件发生 ISO 时间戳 |
 | payload | TEXT | JSON 字符串，可空 |
 | created_at | TEXT | |
@@ -56,6 +56,8 @@
 **追加不覆盖、不去重**——完整保留原始数据，供后续称号/失眠判定等迭代使用。
 
 ## 关键点
+
+- **系统群**：`groups` 里有一条 `id = '__system__'` 的记录，系统管理员（`admin`）属于它；不出现在房间列表、打卡墙、晨报/提醒（各处以 `SYSTEM_GROUP_ID` 过滤）。
 
 - **没有「makeups / 补卡」表**：无惩罚模型下不需要补卡。睡前思考题是纯出题、不落库（或仅做「今晚已领」的会话态）。
 - **没有「streak」字段**：连续天数由 `checkins` 实时算出（`computeStreak`），不落库，避免改时间后重算脏数据。

@@ -20,17 +20,20 @@ packages/shared  ──► (无依赖，纯逻辑)
 ### packages/shared（契约核心）
 - `types.ts` — 领域类型（Group / Member / Checkin）
 - `config.ts` — 环境变量加载（AppConfig）
-- `crypto.ts` — sha256、随机 token
+- `crypto.ts` — sha256、随机 token、口令哈希 `hashPassword`、打卡链接派生 `deriveLinkToken`
 - `day.ts` — 日切边界 `currentCheckinDay`、日期加减 `addDays`、墙上时钟 `wallClock`
-- `sleep.ts` — `classifyNight`：一晚的早/晚/无记录判定
+- `sleep.ts` — `classifyNight`（早/晚/无记录）、`isNightHour`（夜间窗口 20:00-05:00）
 - `streak.ts` — `computeStreak`：连续天数（隐藏连续早睡用它，只喂「早睡日期」）
 - `rewards.ts` — 隐藏里程碑常量与查询
+- `constants.ts` — 系统群 ID、默认管理员口令、睡眠时长等常量
+- `config.ts` — 环境变量加载（含 `adminPassword`）
 - 全部纯函数、无 IO、带单元测试
 
 ### packages/db
-- `schema.ts` — v1 schema；`migrate.ts` — 版本化迁移
+- `schema.ts` / `migrate.ts` — 版本化迁移（当前 v4）
 - `client.ts` — SQLite 单例（WAL、外键）
-- `repos/*` — 仓储函数（groups / members / checkins），全部返回 shared 类型
+- `repos/*` — 仓储函数（groups / members / checkins / events）
+- `bootstrap.ts` — 系统管理员引导（`ensureSystemGroup` + `ensureAdmin`）
 
 ### packages/notify
 - `client.ts` — ntfy 发布客户端（fetch）
@@ -41,12 +44,14 @@ packages/shared  ──► (无依赖，纯逻辑)
 
 ### apps/server（Hono）
 - 鉴权中间件（Bearer token → sha256 → 查成员）
-- 业务路由挂在 `/api/v1/*`（Phase 1 实现）
-- 托管 web 构建产物
+- 业务路由挂在 `/api/v1/*`：join / checkin / board / stats / events / admin / groups
+- 系统管理员：启动时 bootstrap（预置 admin），`requireAdmin` 校验系统管理员
+- 托管 web 构建产物（SPA 回退）
 
 ### apps/jobs（node-cron）
-- 睡前提醒任务、晨报任务（Phase 1 实现）
-- 奖励揭示也在这里触发（晨报时结算前一晚）
+- 睡前提醒任务、晨报任务
+- 奖励揭示在晨报结算时触发
+- 遍历房间时跳过系统群（`SYSTEM_GROUP_ID`）
 
 ## 数据流
 
