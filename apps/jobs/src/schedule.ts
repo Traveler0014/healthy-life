@@ -9,8 +9,12 @@ function toCron(hhmm: string): string {
 }
 
 export function registerTasks(deps: JobDeps): void {
-  cron.schedule(toCron(deps.config.reminderTime), () => runReminder(deps));
-  cron.schedule(toCron(deps.config.reportTime), () => runReport(deps));
+  cron.schedule(toCron(deps.config.reminderTime), () => {
+    runReminder(deps).catch((err) => console.error('[jobs] reminder task failed:', err));
+  });
+  cron.schedule(toCron(deps.config.reportTime), () => {
+    runReport(deps).catch((err) => console.error('[jobs] report task failed:', err));
+  });
   console.log(
     `[jobs] scheduled: reminder=${deps.config.reminderTime} report=${deps.config.reportTime} (tz=${deps.config.timezone})`,
   );

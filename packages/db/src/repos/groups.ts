@@ -53,6 +53,12 @@ export function getGroupByInviteCode(db: Db, inviteCode: string): Group | undefi
   return row ? toGroup(row) : undefined;
 }
 
+/** 列出所有群（按创建时间排序）。 */
+export function listGroups(db: Db): Group[] {
+  const rows = db.prepare(`SELECT * FROM groups ORDER BY created_at`).all() as GroupRow[];
+  return rows.map(toGroup);
+}
+
 /** 更新群设置（name / timezone / visibility）。v1 不轮换 inviteCode。 */
 export function updateGroup(
   db: Db,
