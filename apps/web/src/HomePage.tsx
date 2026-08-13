@@ -43,8 +43,8 @@ const STATUS_LABEL: Record<BoardStatus, string> = {
 
 const DAYTIME_LABEL_PRESETS = ['上夜班中', '午睡中', '倒时差中', '补觉中'];
 
-/** ntfy 订阅/使用说明外链（覆盖 App / 网页 / 桌面端） */
-const NTFY_DOCS_URL = 'https://docs.ntfy.sh/subscribe/';
+/** ntfy 订阅/使用说明外链（中文指南，见 docs/ntfy-guide.md） */
+const NTFY_DOCS_URL = 'https://github.com/Traveler0014/healthy-life/blob/main/docs/ntfy-guide.md';
 
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
 export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
