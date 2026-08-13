@@ -20,6 +20,8 @@ export interface AppConfig {
   reportTime: string;
   /** 系统管理员默认口令（仅首次创建 admin 时用） */
   adminPassword: string;
+  /** 网页 favicon（浏览器标签页图标）URL，留空用默认月亮 /icon.svg */
+  faviconUrl: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -36,5 +38,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     reminderTime: env.REMINDER_TIME ?? DEFAULT_REMINDER_TIME,
     reportTime: env.REPORT_TIME ?? DEFAULT_REPORT_TIME,
     adminPassword: env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
+    faviconUrl: env.FAVICON_URL ?? '',
   };
 }

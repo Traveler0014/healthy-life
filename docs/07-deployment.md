@@ -48,6 +48,9 @@ REPORT_TIME=08:00
 
 # 管理员默认口令（首次启动创建 admin，之后在 /admin 后台改）
 ADMIN_PASSWORD=admin123
+
+# 网页 favicon（浏览器标签页图标），留空用默认月亮 /icon.svg；可填任意图片 URL
+FAVICON_URL=
 ```
 
 ## 3. systemd 常驻（两个进程）

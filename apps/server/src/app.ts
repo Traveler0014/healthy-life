@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { serveStatic } from '@hono/node-server/serve-static';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { AppDeps, Env } from './types';
 import { authMiddleware } from './middleware/auth';
@@ -13,6 +14,20 @@ import { groupRoutes } from './routes/groups';
 import { adminPublicRoutes, adminRoutes } from './routes/admin';
 import { eventRoutes } from './routes/events';
 import { notifyRoutes } from './routes/notify';
+
+/** 若配置了自定义 favicon，替换 index.html 里的默认月亮图标（icon + apple-touch-icon）。 */
+function injectFavicon(html: string, faviconUrl: string): string {
+  if (!faviconUrl) return html;
+  return html
+    .replace(
+      '<link rel="icon" href="/icon.svg" type="image/svg+xml" />',
+      `<link rel="icon" href="${faviconUrl}" />`,
+    )
+    .replace(
+      '<link rel="apple-touch-icon" href="/icon.svg" />',
+      `<link rel="apple-touch-icon" href="${faviconUrl}" />`,
+    );
+}
 
 export function createApp(deps: AppDeps): Hono<Env> {
   const app = new Hono<Env>();
@@ -37,17 +52,25 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', groupRoutes(deps)); // 房间/成员管理（admin）
 
   // 托管 web 构建产物（SPA）。
-  // 前端路由（如 /i/<inviteCode>）在 dist 下没有对应文件，需要回退到 index.html。
+  const webRoot = resolve(process.cwd(), 'apps/web/dist');
+  const indexHtml = injectFavicon(
+    readFileSync(resolve(webRoot, 'index.html'), 'utf-8'),
+    deps.config.faviconUrl,
+  );
+
+  // SPA 入口（/、/c/:token、/i/:invite、/admin 等无扩展名路径）→ 返回注入后的 index.html
+  app.use('*', async (c, next) => {
+    const p = c.req.path;
+    if (p.startsWith('/api/') || /\.[a-zA-Z0-9]+$/.test(p)) return next();
+    return c.html(indexHtml);
+  });
+
+  // 静态资源（icon.svg / manifest / assets/* 等带扩展名文件）
   app.use(
     '*',
     serveStatic({
-      root: resolve(process.cwd(), 'apps/web/dist'),
-      rewriteRequestPath: (path) => {
-        // API 由前面的路由处理；带扩展名的是真实静态资源；其余回退到 index.html（SPA）
-        if (path.startsWith('/api/')) return path;
-        if (path === '/' || !/\.[a-zA-Z0-9]+$/.test(path)) return '/index.html';
-        return path;
-      },
+      root: webRoot,
+      rewriteRequestPath: (path) => path,
     }),
   );
 
