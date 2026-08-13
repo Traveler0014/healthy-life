@@ -37,6 +37,12 @@
 | GET | `/api/v1/report/monthly?month=YYYY-MM` | 月报数据（Phase 2，未实现） |
 | GET | `/api/v1/report/yearly?year=YYYY` | 年报数据（Phase 2，未实现） |
 
+### 通知
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/v1/notify/test` | ✅ 向当前成员的 `notify_topic` 发一条测试推送，供用户验证 ntfy 订阅/推送配置；成功 `{ ok: true }`，失败返回 `error`（如未配 `NTFY_TOKEN` / 推送 403） |
+
 ### 管理员（系统级，均需 admin 鉴权）
 
 | 方法 | 路径 | 说明 |

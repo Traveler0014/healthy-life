@@ -22,3 +22,8 @@ export function morningReportMessage(lines: string[]): string {
 export function rewardMessage(nickname: string, label: string): string {
   return `🏅 ${nickname} 解锁隐藏成就「${label}」！`;
 }
+
+/** 用户手动触发的测试推送（用于确认 ntfy 配置正确） */
+export function testNotifyMessage(nickname: string): string {
+  return `🔔 ${nickname}，这是一条测试通知——收到它说明你的 ntfy 推送配置正确，睡前提醒能正常送达～`;
+}

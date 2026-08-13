@@ -597,10 +597,20 @@ h2 {
   margin-left: auto;
 }
 
-.notify-subscribe {
-  display: inline-block;
-  text-decoration: none;
+.notify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-top: 12px;
+}
+
+.notify-actions a {
+  text-decoration: none;
+}
+
+.notify-docs a {
+  color: var(--accent);
 }
 
 /* ---------- 管理后台 ---------- */

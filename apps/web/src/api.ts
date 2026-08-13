@@ -253,6 +253,8 @@ export const api = {
   stats: () => request<StatsResponse>('/stats'),
   recordEvent: (type: string, payload?: unknown) =>
     request<RecordEventResponse>('/events', { method: 'POST', body: { type, payload } }),
+  /** 手动触发一条测试推送，验证自己的 ntfy 订阅/推送配置 */
+  notifyTest: () => request<{ ok: boolean }>('/notify/test', { method: 'POST' }),
   adminLogin: (password: string) =>
     request<{ member: Member; token: string; link: string }>('/admin/login', {
       method: 'POST',

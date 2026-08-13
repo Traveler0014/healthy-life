@@ -3,6 +3,7 @@ import {
   classifyNight,
   currentCheckinDay,
   isNightHour,
+  minutesLate,
   wallClock,
   type WallClock,
 } from '@healthy-life/shared';
@@ -14,11 +15,6 @@ const pad = (n: number): string => String(n).padStart(2, '0');
 
 function formatHm(wc: WallClock): string {
   return `${pad(wc.hour)}:${pad(wc.minute)}`;
-}
-
-function minutesBetween(targetBedtime: string, wc: WallClock): number {
-  const [th, tm] = targetBedtime.split(':').map(Number);
-  return wc.hour * 60 + wc.minute - (th * 60 + tm);
 }
 
 /**
@@ -66,7 +62,7 @@ export function checkinRoutes(deps: AppDeps): Hono<Env> {
     const message =
       outcome === 'early'
         ? earlyCheckinMessage(member.nickname, time)
-        : lateCheckinMessage(member.nickname, time, Math.max(0, minutesBetween(member.targetBedtime, wc)));
+        : lateCheckinMessage(member.nickname, time, minutesLate(member.targetBedtime, wc));
 
     // 白天打卡（05:00-20:00）→ 前端弹窗让用户自选状态标签
     const isDaytimeCheckin = !isNightHour(wc.hour);

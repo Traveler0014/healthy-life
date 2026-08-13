@@ -43,6 +43,9 @@ const STATUS_LABEL: Record<BoardStatus, string> = {
 
 const DAYTIME_LABEL_PRESETS = ['上夜班中', '午睡中', '倒时差中', '补觉中'];
 
+/** ntfy 订阅/使用说明外链（覆盖 App / 网页 / 桌面端） */
+const NTFY_DOCS_URL = 'https://docs.ntfy.sh/subscribe/';
+
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
 export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
   const [me, setMe] = useState<Member | null>(null);
@@ -63,6 +66,8 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [notifySubscribeUrl, setNotifySubscribeUrl] = useState<string | null>(null);
   const [togglingNotify, setTogglingNotify] = useState(false);
+  const [testingNotify, setTestingNotify] = useState(false);
+  const [notifyTestMsg, setNotifyTestMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function copyLink() {
     try {
@@ -147,6 +152,20 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       // 忽略失败
     } finally {
       setTogglingNotify(false);
+    }
+  }
+
+  async function handleTestNotify() {
+    setTestingNotify(true);
+    setNotifyTestMsg(null);
+    try {
+      await api.notifyTest();
+      setNotifyTestMsg({ ok: true, text: '测试通知已发送，去 ntfy 看看收到没～' });
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : '发送失败，请稍后再试';
+      setNotifyTestMsg({ ok: false, text: `测试通知发送失败：${msg}` });
+    } finally {
+      setTestingNotify(false);
     }
   }
 
@@ -313,16 +332,36 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
               {me.notifyEnabled ? '关闭' : '开启'}
             </button>
           </div>
-          {notifySubscribeUrl && (
-            <a
-              className="button primary small notify-subscribe"
-              href={notifySubscribeUrl}
-              target="_blank"
-              rel="noreferrer"
+          <div className="notify-actions">
+            {notifySubscribeUrl && (
+              <a
+                className="button primary small"
+                href={notifySubscribeUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                订阅 ntfy 提醒
+              </a>
+            )}
+            <button
+              type="button"
+              className="button chip"
+              disabled={testingNotify}
+              onClick={handleTestNotify}
             >
-              订阅 ntfy 提醒
-            </a>
+              {testingNotify ? '发送中…' : '发送测试通知'}
+            </button>
+          </div>
+          {notifyTestMsg && (
+            <p className={notifyTestMsg.ok ? 'notice' : 'error'} role="status">
+              {notifyTestMsg.text}
+            </p>
           )}
+          <p className="hint small notify-docs">
+            <a href={NTFY_DOCS_URL} target="_blank" rel="noreferrer">
+              ntfy 怎么用？（App / 网页 / 桌面端）
+            </a>
+          </p>
         </section>
       )}
 

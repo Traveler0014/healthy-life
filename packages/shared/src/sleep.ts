@@ -29,3 +29,17 @@ export function classifyNight(opts: {
   const hm = `${pad(wc.hour)}:${pad(wc.minute)}`;
   return hm <= opts.targetBedtime ? 'early' : 'late';
 }
+
+/**
+ * 计算「比目标就寝时间晚了多少分钟」（非负）。
+ * - 同一天内晚睡：墙钟 ≥ 目标 → 差值即晚睡分钟数。
+ * - 跨午夜熬夜：墙钟在午夜后、目标在午夜前（如目标 23:00、凌晨 00:36）→ 加 24h，
+ *   得到正确分钟数（00:36 → 晚 96 分钟），而不是被截断成 0。
+ */
+export function minutesLate(targetBedtime: string, wc: { hour: number; minute: number }): number {
+  const [th, tm] = targetBedtime.split(':').map(Number);
+  const target = th * 60 + tm;
+  const now = wc.hour * 60 + wc.minute;
+  const diff = now - target;
+  return diff >= 0 ? diff : diff + 1440;
+}

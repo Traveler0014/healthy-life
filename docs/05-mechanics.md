@@ -29,6 +29,8 @@
 - **即时回执**（server 返回 + 可选 ntfy 回执）：
   - early → `earlyCheckinMessage`：庆祝（可附「比目标早 X 分钟」）
   - late → `lateCheckinMessage`：温和提醒「比目标晚了约 X 分钟，明天提前一点点」，**不羞辱**
+- **晚睡分钟数跨午夜**：用 `shared/sleep.minutesLate` 计算；墙钟早于目标（熬夜到次日凌晨）时加 24h，
+  如目标 23:00、凌晨 00:36 → 晚 96 分钟（而不是 0）。
 
 ## 4. 可见统计（日常只展示这些）
 

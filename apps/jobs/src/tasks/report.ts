@@ -4,6 +4,7 @@ import {
   computeStreak,
   currentCheckinDay,
   isStreakMilestone,
+  minutesLate,
   wallClock,
   SYSTEM_GROUP_ID,
   type WallClock,
@@ -22,11 +23,6 @@ const pad = (n: number): string => String(n).padStart(2, '0');
 
 function formatHm(wc: WallClock): string {
   return `${pad(wc.hour)}:${pad(wc.minute)}`;
-}
-
-function minutesLate(targetBedtime: string, wc: WallClock): number {
-  const [th, tm] = targetBedtime.split(':').map(Number);
-  return wc.hour * 60 + wc.minute - (th * 60 + tm);
 }
 
 /**
@@ -73,7 +69,7 @@ export async function runReport(deps: JobDeps): Promise<void> {
           lateCheckinMessage(
             member.nickname,
             formatHm(wc),
-            Math.max(0, minutesLate(member.targetBedtime, wc)),
+            minutesLate(member.targetBedtime, wc),
           ),
         );
       } else {

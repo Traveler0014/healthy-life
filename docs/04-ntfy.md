@@ -19,6 +19,8 @@ ntfy 是**单向推送**（服务端 → 成员手机），负责：
 - **提醒逐人推送**：每成员一个随机不可猜的 topic（`members.notify_topic`），睡前提醒任务遍历成员、向各自 topic 推送。这样成员可独立开启/关闭，不会收到别人的提醒。
 - **订阅链接从打卡页获取**：`GET /api/v1/me` 返回 `notifySubscribeUrl = NTFY_BASE_URL/<topic>`，打卡页展示「开启通知」按钮指向该链接（ntfy 网页/App 内订阅）。
 - **启用/禁用**：`PATCH /api/v1/me { notifyEnabled }` 控制服务端是否向该成员推送；关闭后 jobs 跳过，但**不会**代用户从 ntfy App 退订（退订需用户在 App 里操作）。
+- **手动测试推送**：`POST /api/v1/notify/test` 向自己 topic 发一条测试通知，打卡页提供「发送测试通知」按钮，供用户自行验证推送配置。
+- **使用说明外链**：打卡页附「ntfy 怎么用」外链（指向 `https://docs.ntfy.sh/subscribe/`，覆盖 App / 网页 / 桌面端订阅方式）。
 - 日报/周报（晨报）仍走共享 `{report}` topic，个性化推送暂缓。
 - 按个人目标时间做**个性化提醒时机**（在各自目标前 N 分钟推送）仍属 Phase 2.4，暂未实现。
 
