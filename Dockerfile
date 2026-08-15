@@ -10,7 +10,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-# 启用 corepack 提供的 pnpm（版本由根 package.json 的 packageManager 字段锁定为 11.20.0）
+# 启用 corepack 提供的 pnpm（版本由根 package.json 的 packageManager 字段锁定为 11.21.0）
 RUN corepack enable
 
 WORKDIR /app
