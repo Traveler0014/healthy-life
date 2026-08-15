@@ -17,6 +17,10 @@ export function AdminPage({ onLogout }: AdminPageProps) {
   const [showPwd, setShowPwd] = useState(false);
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
+  const [editRoom, setEditRoom] = useState<Group | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editTimezone, setEditTimezone] = useState('');
+  const [editVisibility, setEditVisibility] = useState<'exact' | 'presence'>('presence');
 
   const loadRooms = useCallback(async () => {
     try {
@@ -122,6 +126,37 @@ export function AdminPage({ onLogout }: AdminPageProps) {
     }
   }
 
+  function openRoomSettings(room: Group) {
+    setEditRoom(room);
+    setEditName(room.name);
+    setEditTimezone(room.timezone);
+    setEditVisibility(room.visibility);
+  }
+
+  async function saveRoomSettings() {
+    if (!editRoom) return;
+    const name = editName.trim();
+    if (!name) {
+      setError('房间名不能为空');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.updateGroup(editRoom.id, {
+        name,
+        timezone: editTimezone.trim() || undefined,
+        visibility: editVisibility,
+      });
+      setEditRoom(null);
+      setNotice(`房间「${name}」设置已保存`);
+      await loadRooms();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '保存失败');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="page admin-page">
       <header className="topbar">
@@ -169,6 +204,9 @@ export function AdminPage({ onLogout }: AdminPageProps) {
               <button type="button" className="button ghost small" onClick={() => toggleRoom(room)}>
                 {expanded === room.id ? '收起' : '成员'}
               </button>
+              <button type="button" className="button ghost small" onClick={() => openRoomSettings(room)}>
+                设置
+              </button>
             </div>
             {expanded === room.id && (
               <ul className="board">
@@ -197,25 +235,95 @@ export function AdminPage({ onLogout }: AdminPageProps) {
         <div className="overlay">
           <div className="dialog" role="dialog" aria-label="修改管理员口令">
             <h2>修改管理员口令</h2>
-            <input
-              type="password"
-              className="label-input"
-              value={oldPwd}
-              onChange={(e) => setOldPwd(e.target.value)}
-              placeholder="原口令"
-            />
-            <input
-              type="password"
-              className="label-input"
-              value={newPwd}
-              onChange={(e) => setNewPwd(e.target.value)}
-              placeholder="新口令（至少 4 位）"
-            />
+            <div className="dialog-form">
+              <label className="field">
+                <span>原口令</span>
+                <input
+                  type="password"
+                  value={oldPwd}
+                  onChange={(e) => setOldPwd(e.target.value)}
+                  placeholder="输入当前口令"
+                />
+              </label>
+              <label className="field">
+                <span>新口令</span>
+                <input
+                  type="password"
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder="至少 4 位"
+                />
+              </label>
+            </div>
             <div className="dialog-actions">
               <button type="button" className="button ghost" onClick={() => setShowPwd(false)}>
                 取消
               </button>
               <button type="button" className="button primary small" onClick={changePassword} disabled={busy}>
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editRoom && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label="房间设置">
+            <h2>房间设置</h2>
+            <div className="dialog-form">
+              <label className="field">
+                <span>房间名</span>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="房间名"
+                  maxLength={24}
+                />
+              </label>
+              <label className="field">
+                <span>时区（IANA，如 Asia/Shanghai）</span>
+                <input
+                  type="text"
+                  value={editTimezone}
+                  onChange={(e) => setEditTimezone(e.target.value)}
+                  placeholder="Asia/Shanghai"
+                />
+              </label>
+              <div className="field">
+                <span>打卡墙显示</span>
+                <div className="segmented">
+                  <label className={`seg ${editVisibility === 'exact' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="exact"
+                      checked={editVisibility === 'exact'}
+                      onChange={() => setEditVisibility('exact')}
+                    />
+                    <span className="seg-title">显示打卡时间</span>
+                    <span className="seg-desc">可互相监督前一晚</span>
+                  </label>
+                  <label className={`seg ${editVisibility === 'presence' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="presence"
+                      checked={editVisibility === 'presence'}
+                      onChange={() => setEditVisibility('presence')}
+                    />
+                    <span className="seg-title">仅显示状态</span>
+                    <span className="seg-desc">更隐私</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="dialog-actions">
+              <button type="button" className="button ghost" onClick={() => setEditRoom(null)}>
+                取消
+              </button>
+              <button type="button" className="button primary small" onClick={saveRoomSettings} disabled={busy}>
                 保存
               </button>
             </div>

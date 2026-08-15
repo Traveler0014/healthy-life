@@ -106,3 +106,31 @@ export function listCheckinsForGroup(
     .all(groupId, from ?? null, from ?? null, to ?? null, to ?? null) as CheckinRow[];
   return rows.map(toCheckin);
 }
+
+/** 单个成员最近一次打卡（按绝对时间），无记录返回 undefined。 */
+export function getLatestCheckin(db: Db, memberId: string): Checkin | undefined {
+  const row = db
+    .prepare(`SELECT * FROM checkins WHERE member_id = ? ORDER BY checked_in_at DESC LIMIT 1`)
+    .get(memberId) as CheckinRow | undefined;
+  return row ? toCheckin(row) : undefined;
+}
+
+/** 群内每个成员最近一次打卡（一条 SQL 批量取，避免 N+1），返回 memberId → Checkin。 */
+export function latestCheckinsForGroup(db: Db, groupId: string): Map<string, Checkin> {
+  const rows = db
+    .prepare(
+      `SELECT c.* FROM checkins c
+       JOIN members m ON m.id = c.member_id
+       WHERE m.group_id = @groupId
+         AND c.checked_in_at = (
+           SELECT MAX(c2.checked_in_at) FROM checkins c2 WHERE c2.member_id = c.member_id
+         )`,
+    )
+    .all({ groupId }) as CheckinRow[];
+  const map = new Map<string, Checkin>();
+  for (const r of rows) {
+    const ci = toCheckin(r);
+    map.set(ci.memberId, ci);
+  }
+  return map;
+}

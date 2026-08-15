@@ -95,12 +95,18 @@ export interface BoardEntry {
   status: BoardStatus;
   /** 该成员当前时区（IANA） */
   timezone?: string;
-  /** 原始打卡 ISO 时间戳（用于相对时间显示） */
-  checkedInAt?: string;
-  /** 已按该成员时区格式化（HH:mm），仅 sleeping/reversed 且 exact 时存在 */
-  checkedInAtLocal?: string;
   /** 白天打卡的自定义标签（reversed 时存在） */
   customLabel?: string | null;
+  /** 是否打过卡（false = 从未打卡 → 显示「还没打过卡」） */
+  hasCheckedIn: boolean;
+  /** 最近一次打卡的墙上时钟 'HH:mm'（24h，按打卡时区） */
+  lastCheckinLocal?: string;
+  /** 最近一次打卡时的设备时区（IANA），用于时区名标注 */
+  lastCheckinTimezone?: string;
+  /** 相对标签：今天 / 昨天 / 前天 / N天前（按成员当地时区） */
+  lastCheckinDayLabel?: string;
+  /** 打卡日 'M-D'，仅 daysAgo>=3 时存在，附在「N天前」后 */
+  lastCheckinDate?: string;
 }
 
 export interface BoardResponse {
@@ -268,6 +274,10 @@ export const api = {
   listGroups: () => request<{ groups: Group[] }>('/groups'),
   createGroup: (name: string) =>
     request<{ group: Group }>('/groups', { method: 'POST', body: { name } }),
+  updateGroup: (
+    groupId: string,
+    patch: { name?: string; timezone?: string; visibility?: 'exact' | 'presence' },
+  ) => request<{ group: Group }>(`/groups/${groupId}`, { method: 'PATCH', body: patch }),
   listRoomMembers: (groupId: string) =>
     request<{ group: string; members: Member[] }>(`/groups/${groupId}/members`),
   removeMember: (groupId: string, memberId: string) =>

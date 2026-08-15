@@ -30,7 +30,7 @@ packages/shared  ──► (无依赖，纯逻辑)
 - 全部纯函数、无 IO、带单元测试
 
 ### packages/db
-- `schema.ts` / `migrate.ts` — 版本化迁移（当前 v4）
+- `schema.ts` / `migrate.ts` — 版本化迁移（当前 v5）
 - `client.ts` — SQLite 单例（WAL、外键）
 - `repos/*` — 仓储函数（groups / members / checkins / events）
 - `bootstrap.ts` — 系统管理员引导（`ensureSystemGroup` + `ensureAdmin`）
