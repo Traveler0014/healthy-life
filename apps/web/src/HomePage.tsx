@@ -99,12 +99,13 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [currentPrompt, setCurrentPrompt] = useState<{ id: string; question: string } | null>(null);
   const [promptHistory, setPromptHistory] = useState<PromptHistoryResponse['claims'] | null>(null);
   const [showPromptPanel, setShowPromptPanel] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [promptBusy, setPromptBusy] = useState(false);
   const [notifySubscribeUrl, setNotifySubscribeUrl] = useState<string | null>(null);
   const [togglingNotify, setTogglingNotify] = useState(false);
   const [testingNotify, setTestingNotify] = useState(false);
   const [notifyTestMsg, setNotifyTestMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // 顶栏二级菜单：'prompts' 历史题库 / 'account' 帐号管理
+  const [menuOpen, setMenuOpen] = useState<'prompts' | 'account' | null>(null);
 
   async function copyLink() {
     try {
@@ -319,20 +320,34 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
     }
   }
 
-  async function toggleHistory() {
-    if (showHistory) {
-      setShowHistory(false);
-      return;
+  async function ensurePromptHistory() {
+    if (promptHistory !== null) return;
+    try {
+      const res = await api.promptHistory();
+      setPromptHistory(res.claims);
+    } catch {
+      setPromptHistory([]);
     }
-    setShowHistory(true);
-    if (promptHistory === null) {
-      try {
-        const res = await api.promptHistory();
-        setPromptHistory(res.claims);
-      } catch {
-        setPromptHistory([]);
-      }
-    }
+  }
+
+  function toggleMenu(which: 'prompts' | 'account') {
+    setMenuOpen((prev) => {
+      const next = prev === which ? null : which;
+      if (next === 'prompts') void ensurePromptHistory();
+      return next;
+    });
+  }
+
+  function startAccountAction(action: 'export' | 'delete') {
+    setMenuOpen(null);
+    setAccountPassword('');
+    setAccountMsg(null);
+    setAccountAction(action);
+  }
+
+  function openEmojiPickerFromMenu() {
+    setMenuOpen(null);
+    setShowEmojiPicker(true);
   }
 
   return (
@@ -340,14 +355,78 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       <header className="topbar">
         <div className="brand">🌙 早睡打卡</div>
         <div className="topbar-actions">
-          <button
-            type="button"
-            className="button ghost small emoji-btn"
-            onClick={() => setShowEmojiPicker(true)}
-            aria-label="更换表情"
-          >
-            {me?.emoji ?? '😴'}
-          </button>
+          <div className="menu">
+            <button
+              type="button"
+              className="button ghost small menu-trigger"
+              onClick={() => toggleMenu('prompts')}
+              aria-expanded={menuOpen === 'prompts'}
+            >
+              题库 ▾
+            </button>
+            {menuOpen === 'prompts' && (
+              <>
+                <div className="menu-backdrop" onClick={() => setMenuOpen(null)} />
+                <div className="menu-panel prompts-menu">
+                  <p className="menu-title">历史题库</p>
+                  <p className="menu-hint">抽过的题在打卡日结束后可查看答案。</p>
+                  {promptHistory === null ? (
+                    <p className="menu-hint">加载中…</p>
+                  ) : promptHistory.length === 0 ? (
+                    <p className="menu-hint">还没有抽过题</p>
+                  ) : (
+                    <ul className="prompt-history">
+                      {promptHistory.map((c) => (
+                        <li key={c.id}>
+                          <p className="prompt-meta">
+                            {c.date} · {PROMPT_CATEGORY_LABELS[c.category] ?? c.category}
+                          </p>
+                          <p className="prompt-q">{c.question}</p>
+                          <p className="prompt-a">答案：{c.answer}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="menu">
+            <button
+              type="button"
+              className="button ghost small menu-trigger"
+              onClick={() => toggleMenu('account')}
+              aria-expanded={menuOpen === 'account'}
+            >
+              帐号 ▾
+            </button>
+            {menuOpen === 'account' && (
+              <>
+                <div className="menu-backdrop" onClick={() => setMenuOpen(null)} />
+                <div className="menu-panel account-menu">
+                  <p className="menu-title">帐号管理</p>
+                  <button type="button" className="menu-item" onClick={openEmojiPickerFromMenu}>
+                    <span>我的头像</span>
+                    <span className="menu-item-value">{me?.emoji ?? '😴'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="menu-item"
+                    onClick={() => startAccountAction('export')}
+                  >
+                    <span>导出数据</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="menu-item danger"
+                    onClick={() => startAccountAction('delete')}
+                  >
+                    <span>注销账号</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button type="button" className="button ghost small" onClick={copyLink}>
             {copied ? '已复制 ✓' : '复制链接'}
           </button>
@@ -409,6 +488,24 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
               {receipt.message}
             </div>
           )}
+
+          {/* 打卡后：睡前操作直接出现在打卡键下方，方便带一题边想边睡 */}
+          {(isSleeping || receipt) && (
+            <div className="sleep-actions">
+              <button type="button" className="button prompt-button" onClick={openPromptPanel}>
+                🤔 抽一道思考题
+              </button>
+              <button type="button" className="button wake-button" onClick={handleWakeup}>
+                ☀️ 我起床了
+              </button>
+            </div>
+          )}
+          {currentPrompt && (
+            <div className="prompt-card inline-prompt">
+              <p className="prompt-question">{currentPrompt.question}</p>
+              <p className="prompt-hint">答案睡醒后才能看，先带着它入睡吧～</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -423,28 +520,6 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                 : '还没打卡，困了就来点一下'}
             </span>
           </div>
-        </section>
-      )}
-
-      {isSleeping && (
-        <section className="card">
-          <h2>睡不着？</h2>
-          <p className="hint small">
-            抽一道闭眼可思考的题转移注意力，答案第二天早上才能看；或声明起床，提前退出睡眠状态。
-          </p>
-          <div className="notify-actions">
-            <button type="button" className="button ghost small" onClick={openPromptPanel}>
-              抽一道思考题
-            </button>
-            <button type="button" className="button ghost small" onClick={handleWakeup}>
-              我起床了
-            </button>
-          </div>
-          {currentPrompt && (
-            <div className="prompt-card">
-              <p className="prompt-question">{currentPrompt.question}</p>
-            </div>
-          )}
         </section>
       )}
 
@@ -563,66 +638,6 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
             </div>
           </div>
           <p className="hint small">只看你打卡过的夜晚，忘打卡不计入统计。</p>
-        </section>
-      )}
-
-      {!loading && me && (
-        <section className="card">
-          <h2>历史题库</h2>
-          <p className="hint small">抽过的题在打卡日结束后可查看答案。</p>
-          <button type="button" className="button ghost small" onClick={toggleHistory}>
-            {showHistory ? '收起' : '查看抽过的题'}
-          </button>
-          {showHistory && (
-            <ul className="prompt-history">
-              {promptHistory === null ? (
-                <li className="hint">加载中…</li>
-              ) : promptHistory.length === 0 ? (
-                <li className="hint">还没有抽过题</li>
-              ) : (
-                promptHistory.map((c) => (
-                  <li key={c.id}>
-                    <p className="prompt-meta">
-                      {c.date} · {PROMPT_CATEGORY_LABELS[c.category] ?? c.category}
-                    </p>
-                    <p className="prompt-q">{c.question}</p>
-                    <p className="prompt-a">答案：{c.answer}</p>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {!loading && me && (
-        <section className="card">
-          <h2>数据与账号</h2>
-          <p className="hint small">你的数据属于你。可随时导出或注销，敏感操作需输入口令核验。</p>
-          <div className="notify-actions">
-            <button
-              type="button"
-              className="button ghost small"
-              onClick={() => {
-                setAccountPassword('');
-                setAccountMsg(null);
-                setAccountAction('export');
-              }}
-            >
-              导出数据
-            </button>
-            <button
-              type="button"
-              className="button ghost small danger"
-              onClick={() => {
-                setAccountPassword('');
-                setAccountMsg(null);
-                setAccountAction('delete');
-              }}
-            >
-              注销账号
-            </button>
-          </div>
         </section>
       )}
 

@@ -437,6 +437,8 @@ h2 {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .button.small {
@@ -792,4 +794,150 @@ h2 {
 
 .button.danger {
   color: var(--danger);
+}
+
+/* ---------- 顶栏二级菜单（题库 / 帐号） ---------- */
+.menu {
+  position: relative;
+}
+
+.menu-trigger {
+  white-space: nowrap;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 41;
+  min-width: 200px;
+  max-width: calc(100vw - 32px);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+}
+
+.menu-title {
+  margin: 4px 10px 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.menu-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0 10px 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--bg-soft);
+  outline: none;
+}
+
+.menu-item.danger {
+  color: var(--danger);
+}
+
+.menu-item-value {
+  color: var(--text-muted);
+  font-size: 22px;
+}
+
+/* 历史题库下拉：列表可滚动 */
+.prompts-menu {
+  width: min(340px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 166, 90, 0.55) transparent;
+}
+
+.prompts-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.prompts-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prompts-menu::-webkit-scrollbar-thumb {
+  background: rgba(242, 166, 90, 0.5);
+  border-radius: 999px;
+}
+
+/* ---------- 打卡后的睡前操作（抽题 / 起床） ---------- */
+.sleep-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sleep-actions .button {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 13px 14px;
+  border-radius: 16px;
+  letter-spacing: 1px;
+}
+
+.prompt-button {
+  background: rgba(143, 217, 154, 0.14);
+  color: var(--early);
+  border: 1px solid rgba(143, 217, 154, 0.4);
+}
+
+.prompt-button:hover {
+  background: rgba(143, 217, 154, 0.22);
+}
+
+.wake-button {
+  background: rgba(242, 192, 122, 0.12);
+  color: var(--late);
+  border: 1px solid rgba(242, 192, 122, 0.35);
+}
+
+.wake-button:hover {
+  background: rgba(242, 192, 122, 0.2);
+}
+
+/* 打卡键下方直接展示的题目 */
+.inline-prompt {
+  margin-top: 12px;
+  text-align: left;
+}
+
+.prompt-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 8px 0 0;
 }

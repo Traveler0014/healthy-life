@@ -106,11 +106,14 @@ export function updateMemberPassword(
   return getMemberById(db, id);
 }
 
-/** 删除成员（连带其打卡记录与事件） */
+/** 删除成员（连带其打卡记录、事件与抽题记录，原子执行） */
 export function deleteMember(db: Db, id: string): void {
-  db.prepare(`DELETE FROM checkins WHERE member_id = ?`).run(id);
-  db.prepare(`DELETE FROM events WHERE member_id = ?`).run(id);
-  db.prepare(`DELETE FROM members WHERE id = ?`).run(id);
+  db.transaction(() => {
+    db.prepare(`DELETE FROM checkins WHERE member_id = ?`).run(id);
+    db.prepare(`DELETE FROM events WHERE member_id = ?`).run(id);
+    db.prepare(`DELETE FROM prompt_claims WHERE member_id = ?`).run(id);
+    db.prepare(`DELETE FROM members WHERE id = ?`).run(id);
+  })();
 }
 
 export function listMembers(db: Db, groupId: string): Member[] {

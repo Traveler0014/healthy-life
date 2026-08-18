@@ -54,27 +54,47 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', groupRoutes(deps)); // 房间/成员管理（admin）
 
   // 托管 web 构建产物（SPA）。
-  const webRoot = resolve(process.cwd(), 'apps/web/dist');
-  const indexHtml = injectFavicon(
-    readFileSync(resolve(webRoot, 'index.html'), 'utf-8'),
-    deps.config.faviconUrl,
-  );
+  // dev 模式下（pnpm --filter 会把 cwd 切到 apps/server，且通常未 build）产物可能缺失：
+  // 此时跳过静态托管，仅提供 API（前端由 vite dev server + /api 代理访问）。
+  const webCandidates = [
+    resolve(process.cwd(), 'apps/web/dist'), // 仓库根目录运行（node apps/server/dist/index.js / Docker）
+    resolve(process.cwd(), 'web/dist'),
+    resolve(process.cwd(), '../web/dist'), // pnpm --filter 运行时 cwd = apps/server
+  ];
+  let webRoot: string | null = null;
+  let indexHtml: string | null = null;
+  for (const candidate of webCandidates) {
+    try {
+      if (readFileSync(resolve(candidate, 'index.html'), 'utf-8')) {
+        webRoot = candidate;
+        indexHtml = injectFavicon(
+          readFileSync(resolve(webRoot, 'index.html'), 'utf-8'),
+          deps.config.faviconUrl,
+        );
+        break;
+      }
+    } catch {
+      // 尝试下一个候选路径
+    }
+  }
 
-  // SPA 入口（/、/c/:token、/i/:invite、/admin 等无扩展名路径）→ 返回注入后的 index.html
-  app.use('*', async (c, next) => {
-    const p = c.req.path;
-    if (p.startsWith('/api/') || /\.[a-zA-Z0-9]+$/.test(p)) return next();
-    return c.html(indexHtml);
-  });
+  if (indexHtml && webRoot) {
+    // SPA 入口（/、/c/:token、/i/:invite、/admin 等无扩展名路径）→ 返回注入后的 index.html
+    app.use('*', async (c, next) => {
+      const p = c.req.path;
+      if (p.startsWith('/api/') || /\.[a-zA-Z0-9]+$/.test(p)) return next();
+      return c.html(indexHtml);
+    });
 
-  // 静态资源（icon.svg / manifest / assets/* 等带扩展名文件）
-  app.use(
-    '*',
-    serveStatic({
-      root: webRoot,
-      rewriteRequestPath: (path) => path,
-    }),
-  );
+    // 静态资源（icon.svg / manifest / assets/* 等带扩展名文件）
+    app.use(
+      '*',
+      serveStatic({
+        root: webRoot,
+        rewriteRequestPath: (path) => path,
+      }),
+    );
+  }
 
   return app;
 }
