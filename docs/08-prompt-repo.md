@@ -6,13 +6,13 @@
 ## 0. 定位与边界
 
 - **本仓库（healthy-life）**：只负责「消费」题目包 —— 契约 + 校验 + 导入 + 落库 + 抽题。见 07。
-- **独立题目仓库（建议命名 `healthy-life-prompts`）**：只负责「生产」题目包 —— 写题、审核、构建、发布。**不含任何业务代码**。
+- **独立题目仓库（[`Traveler0014/puzzles`](https://github.com/Traveler0014/puzzles)）**：只负责「生产」题目包 —— 写题、审核、构建、发布。**不含任何业务代码**。
 
 两者唯一的接口是 **一个 JSON 文件（`bundle.json`）**，通过 URL 交换。任何一方改动都不要求同步发版另一方。
 
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────┐
-│  healthy-life-prompts 仓库   │  bundle │        healthy-life 主仓库     │
+│        puzzles 仓库（题目）     │  bundle │        healthy-life 主仓库     │
 │  写题 YAML → build → bundle  │ ──────► │  validate → import → DB → 抽题 │
 │  → GitHub Release 产物       │  (URL)  │  (jobs 03:10 / admin 手动)    │
 └─────────────────────────────┘        └──────────────────────────────┘
@@ -21,7 +21,7 @@
 ## 1. 仓库目录结构
 
 ```
-healthy-life-prompts/
+puzzles/
 ├── README.md                  # 写题契约 + 投稿流程（给题目贡献者看）
 ├── bundle.schema.json         # 契约 JSON Schema（从主仓库 docs/ 同步，见 §3）
 ├── bundle.yaml                # 包元信息：id / name / version / status / updatedAt
@@ -180,7 +180,7 @@ jobs:
 主仓库消费题目包的三条路径均已实现（见 07）：
 
 1. **jobs 定时**：设 `PROMPT_BUNDLE_URL=<release 的 bundle.json 下载 URL>`，每天 03:10 自动拉取。
-   - 例如 GitHub Release 的固定最新地址：`https://github.com/<owner>/healthy-life-prompts/releases/latest/download/bundle.json`
+   - 例如 GitHub Release 的固定最新地址：`https://github.com/Traveler0014/puzzles/releases/latest/download/bundle.json`
 2. **admin 手动**：后台「题库管理」粘贴 JSON 或填 URL 导入。
 3. **内置 seed**：`prompts` 表为空时自动导入 `CORE_BUNDLE`（保证零配置也能用）。
 
