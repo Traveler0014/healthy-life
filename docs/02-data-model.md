@@ -63,13 +63,41 @@
 |---|---|---|
 | id | TEXT PK | uuid |
 | member_id | TEXT FK | |
-| prompt_id | TEXT | 题目 ID（对应 packages/prompts 题库） |
-| category | TEXT | 领域：physics / math / algorithm / game-theory |
+| prompt_id | TEXT | 题目 ID（对应 `prompts` 表） |
+| category | TEXT | 分类 id（字符串，随题库包定义；旧数据兼容） |
 | date | TEXT | 抽题时打卡日 `YYYY-MM-DD` |
 | claimed_at | TEXT | 抽题 ISO 时间戳 |
 | created_at | TEXT | |
 
 用于「历史题库」：抽过的题在 `date < 当前打卡日`（次日健康起床时段后）时可查看答案。
+
+## prompts（题库，V7）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | TEXT PK | 题目 id（包内唯一，跨包导入时作为主键 upsert） |
+| bundle_id | TEXT | 来源包 id（如 healthy-life-core / 外部包 id） |
+| category | TEXT | 分类 id（对应 prompt_categories） |
+| question | TEXT | 题目正文（现象入口 + 引导思考） |
+| answer | TEXT | 解答（先证否直觉答案，再给核心机制） |
+| source | TEXT | 出处（可信度锚点，必填） |
+| source_url | TEXT | 出处链接，可空 |
+| author | TEXT | 作者/贡献者，可空 |
+| difficulty | INTEGER | 1/2/3 思考深度 |
+| version | TEXT | 所属包版本（semver） |
+| status | TEXT | active（上架）/ disabled（下线） |
+| created_at / updated_at | TEXT | |
+
+题目存 DB、抽题读库：admin 上下线/编辑即时生效。题目包契约与供应链见 `docs/07-prompt-bundle.md`。
+
+## prompt_categories（题库分类，V7）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | TEXT PK | 分类 id |
+| label | TEXT | 展示名（如「天文宇宙」） |
+| bundle_id | TEXT | 来源包 id |
+| updated_at | TEXT | |
 
 ## 关键点
 

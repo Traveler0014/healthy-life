@@ -79,3 +79,35 @@ CREATE TABLE IF NOT EXISTS prompt_claims (
 );
 CREATE INDEX IF NOT EXISTS idx_prompt_claims_member ON prompt_claims(member_id, date);
 `;
+
+/**
+ * V7：题库表（题目从代码/内置包迁入 DB，admin 可在线导入/上下线，抽题读 DB）。
+ * prompt_claims.category 保持字符串，兼容旧分类数据。
+ */
+export const SCHEMA_V7 = `
+CREATE TABLE IF NOT EXISTS prompts (
+  id          TEXT PRIMARY KEY,
+  bundle_id   TEXT NOT NULL DEFAULT 'healthy-life-core',
+  category    TEXT NOT NULL,
+  question    TEXT NOT NULL,
+  answer      TEXT NOT NULL,
+  source      TEXT NOT NULL,
+  source_url  TEXT NOT NULL DEFAULT '',
+  author      TEXT NOT NULL DEFAULT '',
+  difficulty  INTEGER NOT NULL DEFAULT 2,
+  version     TEXT NOT NULL DEFAULT '1.0.0',
+  status      TEXT NOT NULL DEFAULT 'active',
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_prompts_category ON prompts(category);
+CREATE INDEX IF NOT EXISTS idx_prompts_status ON prompts(status);
+CREATE INDEX IF NOT EXISTS idx_prompts_bundle ON prompts(bundle_id);
+
+CREATE TABLE IF NOT EXISTS prompt_categories (
+  id         TEXT PRIMARY KEY,
+  label      TEXT NOT NULL,
+  bundle_id  TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+`;

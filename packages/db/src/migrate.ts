@@ -1,5 +1,5 @@
 import type { Db } from './client';
-import { SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6 } from './schema';
+import { SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7 } from './schema';
 
 const migrations: { version: number; sql: string }[] = [
   { version: 1, sql: SCHEMA_V1 },
@@ -8,6 +8,7 @@ const migrations: { version: number; sql: string }[] = [
   { version: 4, sql: SCHEMA_V4 },
   { version: 5, sql: SCHEMA_V5 },
   { version: 6, sql: SCHEMA_V6 },
+  { version: 7, sql: SCHEMA_V7 },
 ];
 
 export function migrate(db: Db): void {

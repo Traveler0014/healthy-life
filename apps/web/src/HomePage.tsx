@@ -10,7 +10,6 @@ import {
   type CheckinResponse,
   type Member,
   type Outcome,
-  type PromptCategory,
   type PromptHistoryResponse,
   type StatsResponse,
   type TodayResponse,
@@ -43,13 +42,6 @@ const STATUS_LABEL: Record<BoardStatus, string> = {
 };
 
 const DAYTIME_LABEL_PRESETS = ['上夜班中', '午睡中', '倒时差中', '补觉中'];
-
-const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
-  physics: '物理',
-  math: '数学',
-  algorithm: '算法',
-  'game-theory': '博弈论',
-};
 
 /** ntfy 订阅/使用说明外链（站内中文指南页 /ntfy-guide.html，见 public/ntfy-guide.html） */
 const NTFY_DOCS_URL = '/ntfy-guide.html';
@@ -93,9 +85,9 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountMsg, setAccountMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [promptCategories, setPromptCategories] = useState<
-    Array<{ value: PromptCategory; label: string }> | null
+    Array<{ value: string; label: string }> | null
   >(null);
-  const [selectedCategories, setSelectedCategories] = useState<PromptCategory[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<{ id: string; question: string } | null>(null);
   const [promptHistory, setPromptHistory] = useState<PromptHistoryResponse['claims'] | null>(null);
   const [showPromptPanel, setShowPromptPanel] = useState(false);
@@ -289,7 +281,7 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
     setShowPromptPanel(true);
   }
 
-  function toggleCategory(cat: PromptCategory) {
+  function toggleCategory(cat: string) {
     setSelectedCategories((prev) =>
       prev.includes(cat) ? prev.filter((x) => x !== cat) : [...prev, cat],
     );
@@ -321,6 +313,14 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   }
 
   async function ensurePromptHistory() {
+    if (promptCategories === null) {
+      try {
+        const res = await api.promptCategories();
+        setPromptCategories(res.categories);
+      } catch {
+        // 忽略，label 回退到分类 id
+      }
+    }
     if (promptHistory !== null) return;
     try {
       const res = await api.promptHistory();
@@ -328,6 +328,10 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
     } catch {
       setPromptHistory([]);
     }
+  }
+
+  function categoryLabel(category: string): string {
+    return promptCategories?.find((c) => c.value === category)?.label ?? category;
   }
 
   function toggleMenu(which: 'prompts' | 'account') {
@@ -379,7 +383,7 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                       {promptHistory.map((c) => (
                         <li key={c.id}>
                           <p className="prompt-meta">
-                            {c.date} · {PROMPT_CATEGORY_LABELS[c.category] ?? c.category}
+                            {c.date} · {categoryLabel(c.category)}
                           </p>
                           <p className="prompt-q">{c.question}</p>
                           <p className="prompt-a">答案：{c.answer}</p>

@@ -12,6 +12,7 @@
     "@healthy-life/shared": "workspace:*",
     "@healthy-life/db": "workspace:*",
     "@healthy-life/notify": "workspace:*",
+    "@healthy-life/prompts": "workspace:*",
     "node-cron": "^3.0.3"
   },
   "devDependencies": {

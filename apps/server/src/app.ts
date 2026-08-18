@@ -12,6 +12,7 @@ import { boardRoutes } from './routes/board';
 import { statsRoutes } from './routes/stats';
 import { groupRoutes } from './routes/groups';
 import { adminPublicRoutes, adminRoutes } from './routes/admin';
+import { adminPromptRoutes } from './routes/adminPrompts';
 import { eventRoutes } from './routes/events';
 import { notifyRoutes } from './routes/notify';
 import { promptRoutes } from './routes/prompts';
@@ -51,6 +52,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', notifyRoutes(deps)); // POST /notify/test
   app.route('/api/v1', promptRoutes(deps)); // GET /prompts/categories, POST /prompts/random, GET /prompts/history
   app.route('/api/v1', adminRoutes(deps)); // PATCH /admin/password
+  app.route('/api/v1', adminPromptRoutes(deps)); // 题库管理（admin）
   app.route('/api/v1', groupRoutes(deps)); // 房间/成员管理（admin）
 
   // 托管 web 构建产物（SPA）。

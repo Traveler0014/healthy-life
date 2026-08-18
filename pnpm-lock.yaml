@@ -26,6 +26,9 @@ importers:
       '@healthy-life/notify':
         specifier: workspace:*
         version: link:../../packages/notify
+      '@healthy-life/prompts':
+        specifier: workspace:*
+        version: link:../../packages/prompts
       '@healthy-life/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -104,6 +107,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@healthy-life/prompts':
+        specifier: workspace:*
+        version: link:../prompts
       '@healthy-life/shared':
         specifier: workspace:*
         version: link:../shared
@@ -151,6 +157,22 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.20.1)
+
+  tools/prompt-extract:
+    dependencies:
+      '@healthy-life/prompts':
+        specifier: workspace:*
+        version: link:../../packages/prompts
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.1
+        version: 22.20.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.12
+      typescript:
+        specifier: ^5.6.3
+        version: 5.6.3
 
 packages:
 

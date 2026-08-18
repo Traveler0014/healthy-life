@@ -796,6 +796,37 @@ h2 {
   color: var(--danger);
 }
 
+/* ---------- 管理后台 tab ---------- */
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.admin-tab {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-tab:hover {
+  color: var(--text);
+}
+
+.admin-tab.active {
+  color: var(--accent);
+  background: rgba(242, 166, 90, 0.12);
+  border-color: rgba(242, 166, 90, 0.4);
+}
+
 /* ---------- 顶栏二级菜单（题库 / 帐号） ---------- */
 .menu {
   position: relative;

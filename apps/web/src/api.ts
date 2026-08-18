@@ -121,7 +121,7 @@ export interface StatsResponse {
   earlyRate: number;
 }
 
-export type PromptCategory = 'physics' | 'math' | 'algorithm' | 'game-theory';
+export type PromptCategory = string;
 
 export interface PromptResponse {
   prompt: { id: string; category: PromptCategory; question: string };
@@ -298,7 +298,7 @@ export const api = {
   promptCategories: () =>
     request<{ categories: Array<{ value: PromptCategory; label: string }> }>('/prompts/categories'),
   /** 抽一道睡前思考题（抽题即触发打卡，睡前不返回答案） */
-  randomPrompt: (categories?: PromptCategory[]) =>
+  randomPrompt: (categories?: string[]) =>
     request<PromptResponse>('/prompts/random', {
       method: 'POST',
       body: { categories, timezone: getBrowserTimezone() },
@@ -339,4 +339,41 @@ export const api = {
       `/groups/${groupId}/members/${memberId}/reset`,
       { method: 'POST', body: { password } },
     ),
+  /** 管理员题库管理 */
+  adminListPrompts: (status?: 'active' | 'disabled' | 'all') =>
+    request<{ prompts: AdminPrompt[] }>(
+      `/admin/prompts${status && status !== 'all' ? `?status=${status}` : ''}`,
+    ),
+  adminUpdatePrompt: (id: string, patch: Partial<Pick<AdminPrompt, 'question' | 'answer' | 'source' | 'category' | 'status'>>) =>
+    request<{ prompt: AdminPrompt }>(`/admin/prompts/${id}`, { method: 'PATCH', body: patch }),
+  adminDeletePrompt: (id: string) =>
+    request<{ ok: boolean }>(`/admin/prompts/${id}`, { method: 'DELETE' }),
+  adminImportBundle: (input: { url?: string; bundleText?: string }) =>
+    request<BundleImportResult>(`/admin/prompts/import`, { method: 'POST', body: input }),
 };
+
+export interface AdminPrompt {
+  id: string;
+  bundleId: string;
+  category: string;
+  question: string;
+  answer: string;
+  source: string;
+  sourceUrl: string;
+  author: string;
+  difficulty: number;
+  version: string;
+  status: 'active' | 'disabled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BundleImportResult {
+  bundleId: string;
+  bundleName: string;
+  version: string;
+  imported: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}

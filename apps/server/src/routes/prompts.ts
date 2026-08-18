@@ -1,28 +1,22 @@
 import { Hono } from 'hono';
 import { currentCheckinDay } from '@healthy-life/shared';
-import {
-  CATEGORY_LABELS,
-  PROMPT_CATEGORIES,
-  getPromptById,
-  randomPrompt,
-  type PromptCategory,
-} from '@healthy-life/prompts';
+import { randomPrompt } from '@healthy-life/prompts';
 import {
   claimPrompt,
   getGroupById,
+  getPrompt,
+  listActivePrompts,
+  listPromptCategories,
   listPromptClaimsForMember,
   updateMember,
   upsertCheckin,
 } from '@healthy-life/db';
 import type { AppDeps, Env } from '../types';
 
-/** 从请求体解析领域过滤：非法 / 空数组 → undefined（表示全部领域）。 */
-function normalizeCategories(input: unknown): PromptCategory[] | undefined {
+/** 从请求体解析分类过滤：非法 / 空数组 → undefined（表示全部分类）。 */
+function normalizeCategories(input: unknown): string[] | undefined {
   if (!Array.isArray(input)) return undefined;
-  const valid = input.filter(
-    (x): x is PromptCategory =>
-      typeof x === 'string' && (PROMPT_CATEGORIES as string[]).includes(x),
-  );
+  const valid = input.filter((x): x is string => typeof x === 'string' && x.trim() !== '');
   return valid.length > 0 ? valid : undefined;
 }
 
@@ -31,13 +25,17 @@ function normalizeCategories(input: unknown): PromptCategory[] | undefined {
  * - 只在「已打卡 + 睡眠状态」下由前端触发（服务端不强制状态，前端控制展示）。
  * - 抽题即触发一次打卡（更新打卡时间），保持低唤醒定位：不返回早/晚回执。
  * - 睡前只返回题目，答案在「该打卡日结束后」的历史题库里才可见。
+ * - 题目池读 DB（prompts 表）：admin 导入/上下线即时生效，分类随包导入。
  */
 export function promptRoutes(deps: AppDeps): Hono<Env> {
   const router = new Hono<Env>();
 
   router.get('/prompts/categories', (c) => {
     return c.json({
-      categories: PROMPT_CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] })),
+      categories: listPromptCategories(deps.db).map((cat) => ({
+        value: cat.id,
+        label: cat.label,
+      })),
     });
   });
 
@@ -53,9 +51,11 @@ export function promptRoutes(deps: AppDeps): Hono<Env> {
         ? body.timezone.trim()
         : member.lastTimezone || group.timezone;
 
-    // 排除已抽过的题，尽量每次给新题
+    // 排除已抽过的题，尽量每次给新题；池为空时回退到全部
     const excludeIds = listPromptClaimsForMember(deps.db, member.id).map((p) => p.promptId);
-    const prompt = randomPrompt(categories, excludeIds);
+    const pool = listActivePrompts(deps.db);
+    const prompt = randomPrompt(pool, categories, excludeIds);
+    if (!prompt) return c.json({ error: '题库为空' }, 404);
 
     // 抽题即触发打卡（更新打卡时间），不返回早/晚回执
     const now = new Date();
@@ -93,19 +93,22 @@ export function promptRoutes(deps: AppDeps): Hono<Env> {
     const timezone = member.lastTimezone || group.timezone;
     const today = currentCheckinDay(timezone);
 
-    // 仅「已结束的打卡日」（次日健康起床时段后）可查看答案
+    // 仅「已结束的打卡日」（次日健康起床时段后）可查看答案；
+    // 题目已下线/删除时保留记录但不展示内容（history 只出有效题）
     const claims = listPromptClaimsForMember(deps.db, member.id)
       .filter((cl) => cl.date < today)
       .map((cl) => {
-        const p = getPromptById(cl.promptId);
+        const p = getPrompt(deps.db, cl.promptId);
+        if (!p) return null;
         return {
           id: cl.id,
           date: cl.date,
           category: cl.category,
-          question: p?.question ?? '',
-          answer: p?.answer ?? '',
+          question: p.question,
+          answer: p.answer,
         };
-      });
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
 
     return c.json({ claims });
   });
