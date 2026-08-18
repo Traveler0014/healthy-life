@@ -62,3 +62,5 @@
 2. **jobs 定时**：配置 `PROMPT_BUNDLE_URL` 后每天 03:10 自动拉取导入（幂等：内容不变跳过）
 
 外部仓库可参考的发布产物形态：单个 bundle JSON 文件（可置于任意静态托管 / GitHub Release），URL 供 admin 或 jobs 拉取。
+
+> 独立题目仓库的具体落地（目录结构、单题 YAML 格式、构建/发布 CI、id 命名空间、契约 JSON Schema）见 [08-prompt-repo.md](./08-prompt-repo.md)。
