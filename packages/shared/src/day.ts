@@ -71,7 +71,7 @@ export interface CheckinDayLabel {
   label: string;
   /** 打卡距今天的天数（>=0，打卡在“今天”之后时按 0 处理） */
   daysAgo: number;
-  /** 打卡的 'M-D' 形式（如 '8-13'），用于 daysAgo >= 3 时附上具体日期 */
+  /** 打卡的中文月日（如 '8月17日'），用于跨时区绝对日期显示或 daysAgo >= 3 时附上具体日期 */
   monthDay: string;
 }
 
@@ -95,5 +95,5 @@ export function lastCheckinDayLabel(date: string, today: string, hour: number): 
   const earlyMorning = hour < DEFAULT_DAY_BOUNDARY_HOUR;
   const label = earlyMorning && daysAgo <= 2 ? `${base}凌晨` : base;
   const [, m, d] = date.split('-').map(Number);
-  return { label, daysAgo, monthDay: `${m}-${d}` };
+  return { label, daysAgo, monthDay: `${m}月${d}日` };
 }

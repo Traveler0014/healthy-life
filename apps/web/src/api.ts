@@ -105,7 +105,7 @@ export interface BoardEntry {
   lastCheckinTimezone?: string;
   /** 相对标签：今天 / 昨天 / 前天 / N天前（按成员当地时区） */
   lastCheckinDayLabel?: string;
-  /** 最近一次打卡的墙上日期 'M-D'（按打卡时区，始终返回）。同区时附在「N天前」后，跨时区时直接作为日期显示 */
+  /** 最近一次打卡的墙上日期（中文月日，如 '8月17日'，始终返回）。同区时附在「N天前」后，跨时区时直接作为日期显示 */
   lastCheckinDate?: string;
 }
 

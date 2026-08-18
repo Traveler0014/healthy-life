@@ -51,14 +51,14 @@ describe('lastCheckinDayLabel', () => {
     const r = lastCheckinDayLabel('2026-08-01', '2026-08-14', 1);
     expect(r.label).toBe('13天前');
     expect(r.daysAgo).toBe(13);
-    expect(r.monthDay).toBe('8-1');
+    expect(r.monthDay).toBe('8月1日');
   });
   it('future date clamps to today', () => {
     const r = lastCheckinDayLabel('2026-08-15', '2026-08-14', 23);
     expect(r.daysAgo).toBe(0);
     expect(r.label).toBe('今天');
   });
-  it('monthDay strips leading zero', () => {
-    expect(lastCheckinDayLabel('2026-08-03', '2026-08-14', 23).monthDay).toBe('8-3');
+  it('monthDay 用中文月日', () => {
+    expect(lastCheckinDayLabel('2026-08-03', '2026-08-14', 23).monthDay).toBe('8月3日');
   });
 });
