@@ -25,7 +25,7 @@
 |---|---|---|
 | POST | `/api/v1/checkin` | ✅ 打卡（记录当前时刻，body 带 `timezone`，date 由服务端按该时区算）。幂等：同一天重复调用=更新。返回 `{ checkin, outcome: 'early'\|'late', message }` |
 | GET | `/api/v1/checkin/today` | ✅ 今晚我的打卡状态（未打/已打+时间+outcome） |
-| GET | `/api/v1/board` | ✅ 今日打卡墙。每成员返回：实时状态四态（`status`）+ 最近一次睡觉打卡附加信息（`hasCheckedIn` / `lastCheckinLocal` / `lastCheckinTimezone` / `lastCheckinDayLabel` / `lastCheckinDate`）。`visibility=exact` 时前端才显示时间行，`presence` 仅显示状态。时间按打卡时区 24h 显示，「今天/昨天/前天/N天前」按成员当地时区计算（凌晨打卡标「今天凌晨」） |
+| GET | `/api/v1/board` | ✅ 今日打卡墙。每成员返回：实时状态四态（`status`）+ 最近一次睡觉打卡附加信息（`hasCheckedIn` / `lastCheckinLocal` / `lastCheckinTimezone` / `lastCheckinDayLabel` / `lastCheckinDate`）。`visibility=exact` 时前端才显示时间行，`presence` 仅显示状态。时间按打卡时区 24h 显示，「今天/昨天/前天/N天前」按成员当地时区计算（凌晨打卡标「今天凌晨」）。`lastCheckinDate` 为打卡墙上日期 `M-D`（始终返回）；与查看者时区不同时，前端改为显示「`M-D HH:mm` · 时区名」的绝对日期，避免相对标签跨时区被误读 |
 | POST | `/api/v1/events` | ✅ 记录原始事件 `{ type, payload? }`（如 `visit_after_checkin`），追加不覆盖 |
 | GET | `/api/v1/prompts/random` | 领一道睡前思考题（Phase 3，未实现） |
 

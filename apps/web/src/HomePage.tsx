@@ -298,13 +298,21 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                     {exact && (
                       <div className="board-last">
                         {m.hasCheckedIn ? (
-                          <>
-                            上次睡觉 {m.lastCheckinDayLabel} {m.lastCheckinLocal}
-                            {m.lastCheckinDate ? `（${m.lastCheckinDate}）` : ''}
-                            {isDiffTz && m.lastCheckinTimezone && (
-                              <span className="tz-hint"> · {timezoneName(m.lastCheckinTimezone)}</span>
-                            )}
-                          </>
+                          isDiffTz ? (
+                            <>
+                              上次睡觉 {m.lastCheckinDate} {m.lastCheckinLocal}
+                              {m.lastCheckinTimezone && (
+                                <span className="tz-hint"> · {timezoneName(m.lastCheckinTimezone)}</span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              上次睡觉 {m.lastCheckinDayLabel} {m.lastCheckinLocal}
+                              {m.lastCheckinDayLabel?.endsWith('天前') && m.lastCheckinDate
+                                ? `（${m.lastCheckinDate}）`
+                                : ''}
+                            </>
+                          )
                         ) : (
                           '还没打过卡'
                         )}

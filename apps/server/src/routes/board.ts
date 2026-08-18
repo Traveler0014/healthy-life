@@ -76,7 +76,10 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
         const today = `${nowWc.year}-${pad(nowWc.month)}-${pad(nowWc.day)}`;
         const lbl = dayLabel(ciDate, today, ciWc.hour);
         lastCheckinDayLabel = lbl.label;
-        lastCheckinDate = lbl.daysAgo >= 3 ? lbl.monthDay : undefined;
+        // 始终带上打卡的墙上日期（'M-D'）：跨时区时前端显示「8-18 23:50 · GMT+9」这种
+        // 绝对日期，避免「今天/昨天」这类相对标签被不同时区的查看者误读（GMT+9 的成员
+        // 已进入次日，GMT+8 的查看者还停在当天，看到「昨天」会误以为隔了一整天）。
+        lastCheckinDate = lbl.monthDay;
       }
 
       return {
