@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { deriveLinkToken, generateToken, hashPassword, sha256 } from '@healthy-life/shared';
+import { deriveLinkToken, generateToken, hashPassword, isValidTargetBedtime, sha256 } from '@healthy-life/shared';
 import {
   createMember,
   getGroupByInviteCode,
@@ -43,8 +43,8 @@ export function joinRoutes(deps: AppDeps): Hono<Env> {
     if (password.length < MIN_PASSWORD_LEN) {
       return c.json({ error: `password must be at least ${MIN_PASSWORD_LEN} characters` }, 400);
     }
-    if (targetBedtime && !/^\d{2}:\d{2}$/.test(targetBedtime)) {
-      return c.json({ error: 'targetBedtime must be HH:mm' }, 400);
+    if (targetBedtime && !isValidTargetBedtime(targetBedtime)) {
+      return c.json({ error: 'targetBedtime must be HH:mm within 20:00-23:59' }, 400);
     }
 
     const group = getGroupByInviteCode(deps.db, inviteCode);

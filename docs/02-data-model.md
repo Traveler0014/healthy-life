@@ -49,7 +49,7 @@
 |---|---|---|
 | id | TEXT PK | uuid |
 | member_id | TEXT FK | |
-| type | TEXT | 开放类型：`visit_after_checkin`、`prompt_claimed` 等 |
+| type | TEXT | 开放类型：`visit_after_checkin`、`prompt_claimed`、`wake_up` 等 |
 | date | TEXT | 打卡日 `YYYY-MM-DD`（成员最近时区） |
 | occurred_at | TEXT | 事件发生 ISO 时间戳 |
 | payload | TEXT | JSON 字符串，可空 |
@@ -57,11 +57,25 @@
 
 **追加不覆盖、不去重**——完整保留原始数据，供后续称号/失眠判定等迭代使用。
 
+## prompt_claims（睡前思考题抽题记录）
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | TEXT PK | uuid |
+| member_id | TEXT FK | |
+| prompt_id | TEXT | 题目 ID（对应 packages/prompts 题库） |
+| category | TEXT | 领域：physics / math / algorithm / game-theory |
+| date | TEXT | 抽题时打卡日 `YYYY-MM-DD` |
+| claimed_at | TEXT | 抽题 ISO 时间戳 |
+| created_at | TEXT | |
+
+用于「历史题库」：抽过的题在 `date < 当前打卡日`（次日健康起床时段后）时可查看答案。
+
 ## 关键点
 
 - **系统群**：`groups` 里有一条 `id = '__system__'` 的记录，系统管理员（`admin`）属于它；不出现在房间列表、打卡墙、晨报/提醒（各处以 `SYSTEM_GROUP_ID` 过滤）。
 
-- **没有「makeups / 补卡」表**：无惩罚模型下不需要补卡。睡前思考题是纯出题、不落库（或仅做「今晚已领」的会话态）。
+- **没有「makeups / 补卡」表**：无惩罚模型下不需要补卡。睡前思考题抽题历史落 `prompt_claims` 表（供「次日看答案」的历史题库）。
 - **没有「streak」字段**：连续天数由 `checkins` 实时算出（`computeStreak`），不落库，避免改时间后重算脏数据。
 - **没有「晚睡」字段**：早/晚是 `classifyNight(checkin, targetBedtime, tz)` 实时判定，不落库。目标时间变了，历史口径也一致变化（可接受）。
 - **奖励揭示的持久化**：Phase 2+ 若需「已颁发奖牌」去重，再新增 `rewards` 表即可，当前不预建。

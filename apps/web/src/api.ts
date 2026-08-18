@@ -121,6 +121,38 @@ export interface StatsResponse {
   earlyRate: number;
 }
 
+export type PromptCategory = 'physics' | 'math' | 'algorithm' | 'game-theory';
+
+export interface PromptResponse {
+  prompt: { id: string; category: PromptCategory; question: string };
+  checkin: Checkin;
+}
+
+export interface PromptHistoryResponse {
+  claims: Array<{
+    id: string;
+    date: string;
+    category: PromptCategory;
+    question: string;
+    answer: string;
+  }>;
+}
+
+export interface ExportResponse {
+  exportedAt: string;
+  member: Member;
+  checkins: Checkin[];
+  events: Array<{
+    id: string;
+    memberId: string;
+    type: string;
+    date: string;
+    occurredAt: string;
+    payload: string | null;
+    createdAt: string;
+  }>;
+}
+
 export interface RecordEventResponse {
   event: {
     id: string;
@@ -262,6 +294,25 @@ export const api = {
     request<RecordEventResponse>('/events', { method: 'POST', body: { type, payload } }),
   /** 手动触发一条测试推送，验证自己的 ntfy 订阅/推送配置 */
   notifyTest: () => request<{ ok: boolean }>('/notify/test', { method: 'POST' }),
+  /** 睡前思考题：可选领域列表 */
+  promptCategories: () =>
+    request<{ categories: Array<{ value: PromptCategory; label: string }> }>('/prompts/categories'),
+  /** 抽一道睡前思考题（抽题即触发打卡，睡前不返回答案） */
+  randomPrompt: (categories?: PromptCategory[]) =>
+    request<PromptResponse>('/prompts/random', {
+      method: 'POST',
+      body: { categories, timezone: getBrowserTimezone() },
+    }),
+  /** 已结束打卡日的抽题历史（含答案） */
+  promptHistory: () => request<PromptHistoryResponse>('/prompts/history'),
+  /** 手动声明起床（提前退出睡眠状态） */
+  wakeup: () => request<{ ok: boolean }>('/checkin/wakeup', { method: 'POST' }),
+  /** 导出个人原始数据（需口令核验） */
+  exportMe: (password: string) =>
+    request<ExportResponse>('/me/export', { method: 'POST', body: { password } }),
+  /** 注销账号（需口令核验） */
+  deleteAccount: (password: string) =>
+    request<{ ok: boolean }>('/me/delete', { method: 'POST', body: { password } }),
   adminLogin: (password: string) =>
     request<{ member: Member; token: string; link: string }>('/admin/login', {
       method: 'POST',

@@ -12,6 +12,7 @@
     "@healthy-life/shared": "workspace:*",
     "@healthy-life/db": "workspace:*",
     "@healthy-life/notify": "workspace:*",
+    "@healthy-life/prompts": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "hono": "^4.6.14"
   },

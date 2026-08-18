@@ -10,6 +10,20 @@ export function isNightHour(hour: number): boolean {
   return hour >= 20 || hour < 5;
 }
 
+/** 目标就寝时间允许的下界（夜间起点） */
+export const TARGET_BEDTIME_MIN = '20:00';
+/** 目标就寝时间允许的上界 */
+export const TARGET_BEDTIME_MAX = '23:59';
+
+/**
+ * 目标就寝时间是否合法：HH:mm 且在 [20:00, 23:59] 之间。
+ * 限制原因：凌晨目标（如 01:00）与「凌晨打卡一律晚睡」规则冲突，
+ * 且字符串比较下 00:xx 恒小于 20:00，几乎无法早睡，故不允许设凌晨目标。
+ */
+export function isValidTargetBedtime(value: string): boolean {
+  return /^\d{2}:\d{2}$/.test(value) && value >= TARGET_BEDTIME_MIN && value <= TARGET_BEDTIME_MAX;
+}
+
 /**
  * 判定某一晚的结果：早睡 / 晚睡 / 无记录。
  * - 无记录（没打卡）→ missing

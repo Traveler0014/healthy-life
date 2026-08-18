@@ -3,7 +3,7 @@
 ## 包依赖图
 
 ```
-apps/server ──► shared, db, notify
+apps/server ──► shared, db, notify, prompts
 apps/jobs  ──► shared, db, notify
 apps/web   ──► (仅通过 HTTP API 与 server 交互，无包级依赖)
 
@@ -40,7 +40,7 @@ packages/shared  ──► (无依赖，纯逻辑)
 - `templates.ts` — 文案模板（早睡庆祝 / 晚睡提醒 / 晨报 / 奖励揭示）
 
 ### packages/prompts
-- 睡前思考题。**无判题逻辑**，只出题。见 §05。
+- 睡前趣味思考题（带答案、按领域分类）。**无判题逻辑**，只出题；答案由 server 在「打卡日结束后」才返回。见 §05/§06。
 
 ### apps/server（Hono）
 - 鉴权中间件（Bearer token → sha256 → 查成员）

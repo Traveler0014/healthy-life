@@ -65,3 +65,11 @@ export function hasEvent(db: Db, memberId: string, type: string, date: string): 
     .get(memberId, type, date);
   return row !== undefined;
 }
+
+/** 成员某类型事件的最新一条（按 occurred_at），无记录返回 undefined。 */
+export function getLatestEvent(db: Db, memberId: string, type: string): Event | undefined {
+  const row = db
+    .prepare(`SELECT * FROM events WHERE member_id = ? AND type = ? ORDER BY occurred_at DESC LIMIT 1`)
+    .get(memberId, type) as EventRow | undefined;
+  return row ? toEvent(row) : undefined;
+}

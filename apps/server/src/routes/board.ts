@@ -6,7 +6,7 @@ import {
   SLEEP_DURATION_HOURS,
   type WallClock,
 } from '@healthy-life/shared';
-import { getGroupById, latestCheckinsForGroup, listMembers } from '@healthy-life/db';
+import { getGroupById, getLatestEvent, latestCheckinsForGroup, listMembers } from '@healthy-life/db';
 import type { AppDeps, Env } from '../types';
 
 const pad = (n: number): string => String(n).padStart(2, '0');
@@ -59,9 +59,15 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
         const sleepUntil =
           new Date(latest.checkedInAt).getTime() + SLEEP_DURATION_HOURS * 3600 * 1000;
         if (now.getTime() < sleepUntil) {
-          const ciWc = wallClock(latest.timezone || tz, new Date(latest.checkedInAt));
-          status = isNightHour(ciWc.hour) ? 'sleeping' : 'reversed';
-          if (status === 'reversed') customLabel = latest.customLabel;
+          // 手动起床（wake_up 事件在本次打卡之后）→ 提前退出睡眠状态
+          const wokeAt = getLatestEvent(deps.db, m.id, 'wake_up')?.occurredAt;
+          if (wokeAt && wokeAt > latest.checkedInAt) {
+            status = nowIsNight ? 'not-slept' : 'awake';
+          } else {
+            const ciWc = wallClock(latest.timezone || tz, new Date(latest.checkedInAt));
+            status = isNightHour(ciWc.hour) ? 'sleeping' : 'reversed';
+            if (status === 'reversed') customLabel = latest.customLabel;
+          }
         }
       }
 

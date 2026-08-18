@@ -7,7 +7,7 @@ import {
   wallClock,
   type WallClock,
 } from '@healthy-life/shared';
-import { getCheckin, getGroupById, setCheckinCustomLabel, updateMember, upsertCheckin } from '@healthy-life/db';
+import { getCheckin, getGroupById, recordEvent, setCheckinCustomLabel, updateMember, upsertCheckin } from '@healthy-life/db';
 import { earlyCheckinMessage, lateCheckinMessage } from '@healthy-life/notify';
 import type { AppDeps, Env } from '../types';
 
@@ -106,6 +106,23 @@ export function checkinRoutes(deps: AppDeps): Hono<Env> {
     if (!checkin) return c.json({ error: 'checkin not found' }, 404);
 
     return c.json({ checkin });
+  });
+
+  // 手动声明起床（提前退出「睡眠中」状态：午睡 / 倒时差不必睡满 8 小时）
+  router.post('/checkin/wakeup', (c) => {
+    const member = c.get('member');
+    const group = getGroupById(deps.db, member.groupId);
+    if (!group) return c.json({ error: 'group not found' }, 404);
+
+    const timezone = member.lastTimezone || group.timezone;
+    const event = recordEvent(deps.db, {
+      memberId: member.id,
+      type: 'wake_up',
+      date: currentCheckinDay(timezone),
+      occurredAt: new Date().toISOString(),
+    });
+
+    return c.json({ ok: true, event });
   });
 
   return router;

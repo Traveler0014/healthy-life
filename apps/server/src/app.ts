@@ -14,6 +14,7 @@ import { groupRoutes } from './routes/groups';
 import { adminPublicRoutes, adminRoutes } from './routes/admin';
 import { eventRoutes } from './routes/events';
 import { notifyRoutes } from './routes/notify';
+import { promptRoutes } from './routes/prompts';
 
 /** 若配置了自定义 favicon，替换 index.html 里的默认月亮图标（icon + apple-touch-icon）。 */
 function injectFavicon(html: string, faviconUrl: string): string {
@@ -48,6 +49,7 @@ export function createApp(deps: AppDeps): Hono<Env> {
   app.route('/api/v1', statsRoutes(deps)); // GET /stats
   app.route('/api/v1', eventRoutes(deps)); // POST /events
   app.route('/api/v1', notifyRoutes(deps)); // POST /notify/test
+  app.route('/api/v1', promptRoutes(deps)); // GET /prompts/categories, POST /prompts/random, GET /prompts/history
   app.route('/api/v1', adminRoutes(deps)); // PATCH /admin/password
   app.route('/api/v1', groupRoutes(deps)); // 房间/成员管理（admin）
 

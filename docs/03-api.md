@@ -15,19 +15,24 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。新成员一律 `member` |
+| POST | `/api/v1/join` | ✅ 公开。注册/找回合一：`{ inviteCode, nickname, password, targetBedtime?, timezone?, emoji? }` → 返回 `{ member, token, link }`。同名+同口令再次调用 = 找回同一条 link。新成员一律 `member`。`targetBedtime` 为 `HH:mm`，限 `20:00-23:59` |
 | GET | `/api/v1/me` | ✅ 返回 `{ member, notifySubscribeUrl }`；`member` 含 `notifyTopic` / `notifyEnabled`（不含 tokenHash）。`notifySubscribeUrl` = 该成员的 ntfy 订阅链接（`NTFY_BASE_URL/<topic>`） |
-| PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间 / `notifyEnabled`（boolean，启用/禁用通知） |
+| PATCH | `/api/v1/me` | ✅ 改自己昵称 / emoji / 目标就寝时间（`HH:mm`，限 `20:00-23:59`）/ `notifyEnabled`（boolean，启用/禁用通知） |
+| POST | `/api/v1/me/export` | ✅ 导出个人原始数据（敏感操作，`{ password }` 口令核验）→ `{ exportedAt, member, checkins, events }` |
+| POST | `/api/v1/me/delete` | ✅ 注销账号（敏感操作，`{ password }` 口令核验；连带删除打卡与事件）→ `{ ok: true }` |
 
 ### 打卡
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/v1/checkin` | ✅ 打卡（记录当前时刻，body 带 `timezone`，date 由服务端按该时区算）。幂等：同一天重复调用=更新。返回 `{ checkin, outcome: 'early'\|'late', message }` |
+| POST | `/api/v1/checkin/wakeup` | ✅ 手动声明起床（提前退出睡眠状态，午睡/倒时差不睡满 8h），落 `wake_up` 事件，返回 `{ ok, event }` |
 | GET | `/api/v1/checkin/today` | ✅ 今晚我的打卡状态（未打/已打+时间+outcome） |
 | GET | `/api/v1/board` | ✅ 今日打卡墙。每成员返回：实时状态四态（`status`）+ 最近一次睡觉打卡附加信息（`hasCheckedIn` / `lastCheckinLocal` / `lastCheckinTimezone` / `lastCheckinDayLabel` / `lastCheckinDate`）。`visibility=exact` 时前端才显示时间行，`presence` 仅显示状态。时间按打卡时区 24h 显示，相对标签「明天/今天/昨天/前天/N天前」按**查看者当地时区**计算（前端 `?tz=` 上报浏览器时区；成员时区比查看者快时会出现「明天凌晨」）。`lastCheckinDate` 为打卡墙上日期（中文月日，如 `8月17日`），仅 `daysAgo>=3` 时返回，附在「N天前」后 |
 | POST | `/api/v1/events` | ✅ 记录原始事件 `{ type, payload? }`（如 `visit_after_checkin`），追加不覆盖 |
-| GET | `/api/v1/prompts/random` | 领一道睡前思考题（Phase 3，未实现） |
+| GET | `/api/v1/prompts/categories` | ✅ 睡前思考题可选领域列表 → `{ categories: [{ value, label }] }` |
+| POST | `/api/v1/prompts/random` | ✅ 抽一道睡前趣味题 `{ categories?, timezone? }` → `{ prompt: { id, category, question }, checkin }`。**抽题即触发打卡**，睡前不返回答案 |
+| GET | `/api/v1/prompts/history` | ✅ 历史题库：已结束打卡日抽过的题 + 答案 → `{ claims: [{ id, date, category, question, answer }] }` |
 
 ### 统计 / 报告
 

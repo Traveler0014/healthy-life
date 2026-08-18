@@ -66,3 +66,16 @@ ALTER TABLE members ADD COLUMN notify_enabled INTEGER NOT NULL DEFAULT 1;
 -- 为存量成员回填随机 topic（不可猜），新成员在 createMember 时生成
 UPDATE members SET notify_topic = 'hl-' || lower(hex(randomblob(8))) WHERE notify_topic = '';
 `;
+
+export const SCHEMA_V6 = `
+CREATE TABLE IF NOT EXISTS prompt_claims (
+  id         TEXT PRIMARY KEY,
+  member_id  TEXT NOT NULL REFERENCES members(id),
+  prompt_id  TEXT NOT NULL,
+  category   TEXT NOT NULL,
+  date       TEXT NOT NULL,
+  claimed_at TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_prompt_claims_member ON prompt_claims(member_id, date);
+`;

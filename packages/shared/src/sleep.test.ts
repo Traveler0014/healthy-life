@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyNight, isNightHour, minutesLate } from './sleep';
+import { classifyNight, isNightHour, isValidTargetBedtime, minutesLate } from './sleep';
 
 describe('isNightHour', () => {
   it('20:00-04:59 为夜间', () => {
@@ -34,6 +34,30 @@ describe('classifyNight', () => {
   it('after-midnight (before day boundary) counts as late', () => {
     // 上海 02:00 = UTC 前一日 18:00
     expect(classifyNight({ checkedInAt: '2026-01-01T18:00:00Z', targetBedtime: target, timezone: tz })).toBe('late');
+  });
+});
+
+describe('isValidTargetBedtime', () => {
+  it('20:00-23:59 合法', () => {
+    expect(isValidTargetBedtime('20:00')).toBe(true);
+    expect(isValidTargetBedtime('22:30')).toBe(true);
+    expect(isValidTargetBedtime('23:59')).toBe(true);
+  });
+  it('凌晨目标非法', () => {
+    expect(isValidTargetBedtime('00:30')).toBe(false);
+    expect(isValidTargetBedtime('01:00')).toBe(false);
+    expect(isValidTargetBedtime('04:59')).toBe(false);
+  });
+  it('白天/过早时间非法', () => {
+    expect(isValidTargetBedtime('19:59')).toBe(false);
+    expect(isValidTargetBedtime('12:00')).toBe(false);
+  });
+  it('格式非法', () => {
+    expect(isValidTargetBedtime('')).toBe(false);
+    expect(isValidTargetBedtime('23:00:00')).toBe(false);
+    expect(isValidTargetBedtime('23')).toBe(false);
+    expect(isValidTargetBedtime('abc')).toBe(false);
+    expect(isValidTargetBedtime('23:60')).toBe(false);
   });
 });
 

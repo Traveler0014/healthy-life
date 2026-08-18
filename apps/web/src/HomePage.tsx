@@ -10,6 +10,8 @@ import {
   type CheckinResponse,
   type Member,
   type Outcome,
+  type PromptCategory,
+  type PromptHistoryResponse,
   type StatsResponse,
   type TodayResponse,
 } from './api';
@@ -42,8 +44,28 @@ const STATUS_LABEL: Record<BoardStatus, string> = {
 
 const DAYTIME_LABEL_PRESETS = ['上夜班中', '午睡中', '倒时差中', '补觉中'];
 
+const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
+  physics: '物理',
+  math: '数学',
+  algorithm: '算法',
+  'game-theory': '博弈论',
+};
+
 /** ntfy 订阅/使用说明外链（站内中文指南页 /ntfy-guide.html，见 public/ntfy-guide.html） */
 const NTFY_DOCS_URL = '/ntfy-guide.html';
+
+/** 触发浏览器下载一个 JSON 文件。 */
+function downloadJson(filename: string, data: unknown): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 /** 主界面（打卡页）：大按钮打卡 + 今晚状态 + 打卡墙 + 我的统计（绝不显示 streak）。 */
 export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: HomePageProps) {
@@ -63,6 +85,22 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
   const [labelInput, setLabelInput] = useState('');
   const [savingLabel, setSavingLabel] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showBedtimeEditor, setShowBedtimeEditor] = useState(false);
+  const [bedtimeInput, setBedtimeInput] = useState('');
+  const [savingBedtime, setSavingBedtime] = useState(false);
+  const [accountAction, setAccountAction] = useState<'export' | 'delete' | null>(null);
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [accountMsg, setAccountMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [promptCategories, setPromptCategories] = useState<
+    Array<{ value: PromptCategory; label: string }> | null
+  >(null);
+  const [selectedCategories, setSelectedCategories] = useState<PromptCategory[]>([]);
+  const [currentPrompt, setCurrentPrompt] = useState<{ id: string; question: string } | null>(null);
+  const [promptHistory, setPromptHistory] = useState<PromptHistoryResponse['claims'] | null>(null);
+  const [showPromptPanel, setShowPromptPanel] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [promptBusy, setPromptBusy] = useState(false);
   const [notifySubscribeUrl, setNotifySubscribeUrl] = useState<string | null>(null);
   const [togglingNotify, setTogglingNotify] = useState(false);
   const [testingNotify, setTestingNotify] = useState(false);
@@ -99,6 +137,47 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
       setShowEmojiPicker(false);
     } catch {
       // 忽略失败
+    }
+  }
+
+  async function saveBedtime() {
+    const value = bedtimeInput.trim();
+    if (!value) {
+      setShowBedtimeEditor(false);
+      return;
+    }
+    setSavingBedtime(true);
+    try {
+      const res = await api.updateMe({ targetBedtime: value });
+      setMe(res.member);
+      setShowBedtimeEditor(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '保存失败，请稍后再试');
+    } finally {
+      setSavingBedtime(false);
+    }
+  }
+
+  async function confirmAccountAction() {
+    if (!accountAction) return;
+    setAccountBusy(true);
+    setAccountMsg(null);
+    try {
+      if (accountAction === 'export') {
+        const data = await api.exportMe(accountPassword);
+        downloadJson(`healthy-life-export-${data.exportedAt.slice(0, 10)}.json`, data);
+        setAccountMsg({ ok: true, text: '导出成功，文件已开始下载' });
+      } else {
+        await api.deleteAccount(accountPassword);
+        onLogout();
+        return;
+      }
+      setAccountAction(null);
+      setAccountPassword('');
+    } catch (err) {
+      setAccountMsg({ ok: false, text: err instanceof Error ? err.message : '操作失败，请稍后再试' });
+    } finally {
+      setAccountBusy(false);
     }
   }
 
@@ -191,6 +270,71 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
     }
   }
 
+  // —— 睡眠状态 + 睡前思考题（哄睡 / 起床）——
+  const myBoardEntry = board?.members.find((m) => m.memberId === me?.id);
+  const isSleeping = Boolean(
+    myBoardEntry && (myBoardEntry.status === 'sleeping' || myBoardEntry.status === 'reversed'),
+  );
+
+  async function openPromptPanel() {
+    if (!promptCategories) {
+      try {
+        const res = await api.promptCategories();
+        setPromptCategories(res.categories);
+      } catch {
+        // 忽略，直接全领域抽题
+      }
+    }
+    setShowPromptPanel(true);
+  }
+
+  function toggleCategory(cat: PromptCategory) {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((x) => x !== cat) : [...prev, cat],
+    );
+  }
+
+  async function drawPrompt() {
+    setPromptBusy(true);
+    try {
+      const res = await api.randomPrompt(
+        selectedCategories.length > 0 ? selectedCategories : undefined,
+      );
+      setCurrentPrompt(res.prompt);
+      setShowPromptPanel(false);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '抽题失败，请稍后再试');
+    } finally {
+      setPromptBusy(false);
+    }
+  }
+
+  async function handleWakeup() {
+    try {
+      await api.wakeup();
+      await loadData();
+    } catch {
+      // 忽略
+    }
+  }
+
+  async function toggleHistory() {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+    setShowHistory(true);
+    if (promptHistory === null) {
+      try {
+        const res = await api.promptHistory();
+        setPromptHistory(res.claims);
+      } catch {
+        setPromptHistory([]);
+      }
+    }
+  }
+
   return (
     <main className="page home-page">
       <header className="topbar">
@@ -235,7 +379,21 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
           <p className="greeting">
             {me ? `${me.emoji} ${me.nickname}，今晚也要早点睡呀` : '今晚也要早点睡呀'}
           </p>
-          {me?.targetBedtime && <p className="target">目标就寝时间 {me.targetBedtime}</p>}
+          {me?.targetBedtime && (
+            <p className="target">
+              目标就寝时间{' '}
+              <button
+                type="button"
+                className="bedtime-value"
+                onClick={() => {
+                  setBedtimeInput(me.targetBedtime);
+                  setShowBedtimeEditor(true);
+                }}
+              >
+                {me.targetBedtime}
+              </button>
+            </p>
+          )}
 
           <button
             type="button"
@@ -265,6 +423,28 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                 : '还没打卡，困了就来点一下'}
             </span>
           </div>
+        </section>
+      )}
+
+      {isSleeping && (
+        <section className="card">
+          <h2>睡不着？</h2>
+          <p className="hint small">
+            抽一道闭眼可思考的题转移注意力，答案第二天早上才能看；或声明起床，提前退出睡眠状态。
+          </p>
+          <div className="notify-actions">
+            <button type="button" className="button ghost small" onClick={openPromptPanel}>
+              抽一道思考题
+            </button>
+            <button type="button" className="button ghost small" onClick={handleWakeup}>
+              我起床了
+            </button>
+          </div>
+          {currentPrompt && (
+            <div className="prompt-card">
+              <p className="prompt-question">{currentPrompt.question}</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -386,6 +566,66 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
         </section>
       )}
 
+      {!loading && me && (
+        <section className="card">
+          <h2>历史题库</h2>
+          <p className="hint small">抽过的题在打卡日结束后可查看答案。</p>
+          <button type="button" className="button ghost small" onClick={toggleHistory}>
+            {showHistory ? '收起' : '查看抽过的题'}
+          </button>
+          {showHistory && (
+            <ul className="prompt-history">
+              {promptHistory === null ? (
+                <li className="hint">加载中…</li>
+              ) : promptHistory.length === 0 ? (
+                <li className="hint">还没有抽过题</li>
+              ) : (
+                promptHistory.map((c) => (
+                  <li key={c.id}>
+                    <p className="prompt-meta">
+                      {c.date} · {PROMPT_CATEGORY_LABELS[c.category] ?? c.category}
+                    </p>
+                    <p className="prompt-q">{c.question}</p>
+                    <p className="prompt-a">答案：{c.answer}</p>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {!loading && me && (
+        <section className="card">
+          <h2>数据与账号</h2>
+          <p className="hint small">你的数据属于你。可随时导出或注销，敏感操作需输入口令核验。</p>
+          <div className="notify-actions">
+            <button
+              type="button"
+              className="button ghost small"
+              onClick={() => {
+                setAccountPassword('');
+                setAccountMsg(null);
+                setAccountAction('export');
+              }}
+            >
+              导出数据
+            </button>
+            <button
+              type="button"
+              className="button ghost small danger"
+              onClick={() => {
+                setAccountPassword('');
+                setAccountMsg(null);
+                setAccountAction('delete');
+              }}
+            >
+              注销账号
+            </button>
+          </div>
+        </section>
+      )}
+
       {daytimePrompt && (
         <div className="overlay">
           <div className="dialog" role="dialog" aria-label="设置睡眠状态">
@@ -423,6 +663,118 @@ export function HomePage({ onLogout, justJoined = false, onDismissJoinHint }: Ho
                 onClick={() => saveDaytimeLabel(labelInput.trim() || null)}
               >
                 确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showBedtimeEditor && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label="调整目标就寝时间">
+            <h2>目标就寝时间</h2>
+            <p className="subtitle">早睡目标，限晚上 20:00 – 23:59。</p>
+            <input
+              type="time"
+              className="label-input"
+              value={bedtimeInput}
+              min="20:00"
+              max="23:59"
+              onChange={(e) => setBedtimeInput(e.target.value)}
+            />
+            <div className="dialog-actions">
+              <button type="button" className="button ghost" onClick={() => setShowBedtimeEditor(false)}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="button primary small"
+                disabled={savingBedtime}
+                onClick={saveBedtime}
+              >
+                {savingBedtime ? '保存中…' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {accountAction && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label={accountAction === 'export' ? '导出数据' : '注销账号'}>
+            <h2>{accountAction === 'export' ? '导出数据' : '注销账号'}</h2>
+            <p className="subtitle">
+              {accountAction === 'export'
+                ? '输入口令核验后，将下载你的成员信息、打卡记录与事件。'
+                : '输入口令核验后，将删除你的账号、打卡记录与事件，且不可恢复。'}
+            </p>
+            <input
+              type="password"
+              className="label-input"
+              value={accountPassword}
+              onChange={(e) => setAccountPassword(e.target.value)}
+              placeholder="输入口令"
+              autoComplete="current-password"
+            />
+            {accountMsg && (
+              <p className={accountMsg.ok ? 'notice' : 'error'} role="status">
+                {accountMsg.text}
+              </p>
+            )}
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="button ghost"
+                onClick={() => {
+                  setAccountAction(null);
+                  setAccountMsg(null);
+                  setAccountPassword('');
+                }}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className={accountAction === 'delete' ? 'button danger small' : 'button primary small'}
+                disabled={accountBusy || accountPassword.length < 4}
+                onClick={confirmAccountAction}
+              >
+                {accountBusy ? '处理中…' : accountAction === 'delete' ? '确认注销' : '导出'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPromptPanel && (
+        <div className="overlay">
+          <div className="dialog" role="dialog" aria-label="抽一道思考题">
+            <h2>想一道题</h2>
+            <p className="subtitle">选个领域（可多选，不选则随机）。</p>
+            <div className="preset-chips">
+              {(promptCategories ?? []).map((cat) => (
+                <button
+                  key={cat.value}
+                  type="button"
+                  className={
+                    selectedCategories.includes(cat.value)
+                      ? 'button chip selected'
+                      : 'button chip'
+                  }
+                  onClick={() => toggleCategory(cat.value)}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+            <div className="dialog-actions">
+              <button type="button" className="button ghost" onClick={() => setShowPromptPanel(false)}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="button primary small"
+                disabled={promptBusy}
+                onClick={drawPrompt}
+              >
+                {promptBusy ? '抽取中…' : '抽题'}
               </button>
             </div>
           </div>
