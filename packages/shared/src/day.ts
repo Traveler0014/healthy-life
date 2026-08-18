@@ -67,31 +67,36 @@ export function diffDays(from: string, to: string): number {
 }
 
 export interface CheckinDayLabel {
-  /** 相对今天的展示标签：今天 / 昨天 / 前天 / 今天凌晨 / 昨天凌晨 / 前天凌晨 / N天前 */
+  /** 相对查看者今天的展示标签：明天凌晨 / 今天 / 昨天 / 前天 / 今天凌晨 / 昨天凌晨 / 前天凌晨 / N天前 */
   label: string;
-  /** 打卡距今天的天数（>=0，打卡在“今天”之后时按 0 处理） */
+  /** 打卡距查看者今天的天数（可负：负值表示打卡日期在查看者的「明天」，跨时区时出现） */
   daysAgo: number;
-  /** 打卡的中文月日（如 '8月17日'），用于跨时区绝对日期显示或 daysAgo >= 3 时附上具体日期 */
+  /** 打卡的中文月日（如 '8月17日'），用于 daysAgo >= 3 时附上具体日期 */
   monthDay: string;
 }
 
 /**
- * 把「打卡的墙上时钟日期」换算成相对「今天」的展示标签。
+ * 把「打卡的墙上时钟日期」换算成相对「查看者今天」的展示标签。
  *
- * 关键：date 与 today 都用**墙上时钟日期**（成员当地时区的日历日），而不是
- * 打卡日（currentCheckinDay 口径，凌晨归前一晚）。否则凌晨 00:36 打卡会被
- * 错标成「昨天 00:36」——墙上时钟明明是今天，很别扭。
+ * 关键：date 是打卡那一刻在**成员当地时区**的墙上日期（日历日），而不是打卡日
+ * （currentCheckinDay 口径，凌晨归前一晚）；today 是**查看者当地时区**的今天。
+ * 二者作差得到「相对查看者」的 N 天，跨时区下查看者读「昨天/今天」不会错位。
  *
- * 「今天」由调用方用成员当地时区的墙上日期计算——保证跨时区下「N 天前」的
- * N 按对方当地时区口径（而非查看者时区）。
+ * 成员时区比查看者快时，date 可能比 today 晚一天（成员已进入次日、查看者还停在当天），
+ * 此时 daysAgo 为负，标签显示「明天（凌晨）」——这是多时区的自然结果，并非错误。
  *
  * hour 为打卡时刻的墙上小时：小于日切边界（凌晨 00:00-04:59）时，且 daysAgo<=2，
  * 标签追加「凌晨」（如「今天凌晨 00:36」），更贴合熬夜场景；久远（>=3 天）不强调凌晨。
  */
 export function lastCheckinDayLabel(date: string, today: string, hour: number): CheckinDayLabel {
-  const daysAgo = Math.max(0, diffDays(date, today));
-  const base =
-    daysAgo === 0 ? '今天' : daysAgo === 1 ? '昨天' : daysAgo === 2 ? '前天' : `${daysAgo}天前`;
+  // 可负：成员时区比查看者快 → 成员墙上日期可能是查看者的「明天」
+  const daysAgo = diffDays(date, today);
+  let base: string;
+  if (daysAgo <= -1) base = '明天';
+  else if (daysAgo === 0) base = '今天';
+  else if (daysAgo === 1) base = '昨天';
+  else if (daysAgo === 2) base = '前天';
+  else base = `${daysAgo}天前`;
   const earlyMorning = hour < DEFAULT_DAY_BOUNDARY_HOUR;
   const label = earlyMorning && daysAgo <= 2 ? `${base}凌晨` : base;
   const [, m, d] = date.split('-').map(Number);

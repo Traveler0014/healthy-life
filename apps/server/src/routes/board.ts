@@ -25,7 +25,7 @@ export type BoardStatus = 'sleeping' | 'reversed' | 'not-slept' | 'awake';
  *   - not-slept（还没睡）：未在睡，且当前处于夜间（20:00-05:00）
  *   - awake（醒着）：未在睡，且当前处于白天
  * - 附加信息「最近一次睡觉打卡」：始终返回（只要打过卡），供互相监督前一晚；
- *   时间按打卡那一刻的设备时区显示，「今天/昨天/前天/N天前」按成员当地时区计算。
+ *   时间按打卡那一刻的设备时区显示，「今天/昨天/前天/N天前」按查看者当地时区计算。
  */
 export function boardRoutes(deps: AppDeps): Hono<Env> {
   const router = new Hono<Env>();
@@ -34,6 +34,13 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
     const member = c.get('member');
     const group = getGroupById(deps.db, member.groupId);
     if (!group) return c.json({ error: 'group not found' }, 404);
+
+    // 查看者时区：相对标签「今天/昨天/明天」应相对查看者日历，而非成员日历。
+    // 前端上报当前浏览器时区（?tz=），兜底成员最近一次打卡/加入时的时区。
+    const viewerTzParam = c.req.query('tz');
+    const viewerTz = viewerTzParam && viewerTzParam.trim() !== ''
+      ? viewerTzParam.trim()
+      : member.lastTimezone || group.timezone;
 
     const now = new Date();
     const members = listMembers(deps.db, group.id);
@@ -72,14 +79,12 @@ export function boardRoutes(deps: AppDeps): Hono<Env> {
         lastCheckinTimezone = latest.timezone || tz;
         // 标签用「墙上日期」而非打卡日 date：凌晨 00:36 打卡应算「今天凌晨」而非「昨天」
         const ciDate = `${ciWc.year}-${pad(ciWc.month)}-${pad(ciWc.day)}`;
-        const nowWc = wallClock(tz, now);
+        const nowWc = wallClock(viewerTz, now);
         const today = `${nowWc.year}-${pad(nowWc.month)}-${pad(nowWc.day)}`;
         const lbl = dayLabel(ciDate, today, ciWc.hour);
         lastCheckinDayLabel = lbl.label;
-        // 始终带上打卡的墙上日期（中文月日）：跨时区时前端显示「8月18日 23:50 · GMT+9」
-        // 这种绝对日期，避免「今天/昨天」这类相对标签被不同时区的查看者误读（GMT+9 的
-        // 成员已进入次日，GMT+8 的查看者还停在当天，看到「昨天」会误以为隔了一整天）。
-        lastCheckinDate = lbl.monthDay;
+        // 相对标签已按查看者时区算（见上），daysAgo 可负（「明天」）；仅久远记录附具体日期。
+        lastCheckinDate = lbl.daysAgo >= 3 ? lbl.monthDay : undefined;
       }
 
       return {

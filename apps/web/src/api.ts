@@ -103,9 +103,9 @@ export interface BoardEntry {
   lastCheckinLocal?: string;
   /** 最近一次打卡时的设备时区（IANA），用于时区名标注 */
   lastCheckinTimezone?: string;
-  /** 相对标签：今天 / 昨天 / 前天 / N天前（按成员当地时区） */
+  /** 相对标签（按查看者当地时区）：明天凌晨 / 今天 / 昨天 / 前天 / N天前[凌晨] */
   lastCheckinDayLabel?: string;
-  /** 最近一次打卡的墙上日期（中文月日，如 '8月17日'，始终返回）。同区时附在「N天前」后，跨时区时直接作为日期显示 */
+  /** 最近一次打卡的墙上日期（中文月日，如 '8月17日'），仅 daysAgo>=3 时返回，附在「N天前」后 */
   lastCheckinDate?: string;
 }
 
@@ -255,7 +255,8 @@ export const api = {
   setCheckinLabel: (label: string | null, date: string) =>
     request<{ checkin: Checkin }>('/checkin/label', { method: 'PATCH', body: { label, date } }),
   today: () => request<TodayResponse>('/checkin/today'),
-  board: () => request<BoardResponse>('/board'),
+  board: () =>
+    request<BoardResponse>(`/board?tz=${encodeURIComponent(getBrowserTimezone())}`),
   stats: () => request<StatsResponse>('/stats'),
   recordEvent: (type: string, payload?: unknown) =>
     request<RecordEventResponse>('/events', { method: 'POST', body: { type, payload } }),

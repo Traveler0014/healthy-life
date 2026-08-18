@@ -53,10 +53,15 @@ describe('lastCheckinDayLabel', () => {
     expect(r.daysAgo).toBe(13);
     expect(r.monthDay).toBe('8月1日');
   });
-  it('future date clamps to today', () => {
+  it('未来日期（跨时区：成员已进入查看者的明天）标「明天」', () => {
     const r = lastCheckinDayLabel('2026-08-15', '2026-08-14', 23);
-    expect(r.daysAgo).toBe(0);
-    expect(r.label).toBe('今天');
+    expect(r.daysAgo).toBe(-1);
+    expect(r.label).toBe('明天');
+  });
+  it('未来日期且凌晨标「明天凌晨」', () => {
+    const r = lastCheckinDayLabel('2026-08-15', '2026-08-14', 0);
+    expect(r.daysAgo).toBe(-1);
+    expect(r.label).toBe('明天凌晨');
   });
   it('monthDay 用中文月日', () => {
     expect(lastCheckinDayLabel('2026-08-03', '2026-08-14', 23).monthDay).toBe('8月3日');
