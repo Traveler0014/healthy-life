@@ -2,9 +2,9 @@
   "files": [],
   "references": [
     { "path": "packages/shared" },
+    { "path": "packages/prompts" },
     { "path": "packages/db" },
     { "path": "packages/notify" },
-    { "path": "packages/prompts" },
     { "path": "apps/server" },
     { "path": "apps/jobs" }
   ]

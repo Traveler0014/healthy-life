@@ -40,7 +40,7 @@
 | 3.2 | ✅ 「睡不着」入口 + 领取交互 | web, server | 睡眠状态可见，抽题即打卡 |
 | 3.3 | ✅ 次日可查看「昨晚那道题的答案」 | web | 历史题库 |
 | 3.4 | ✅ 题库数据化 + admin 导入/上下线 | db, server, web | prompts 表；题目包契约；admin 后台题库管理 |
-| 3.5 | ✅ 题目包供应链 | tools, jobs, ci | AI 提取 CLI + GH Actions 提取/发布 + jobs 定时拉取 |
+| 3.5 | ✅ 题目包导入与定时更新 | jobs, server | admin 导入（文件/URL）+ jobs 拉取 PROMPT_BUNDLE_URL 自动更新 |
 
 ## Phase 4：长周期报告输出
 

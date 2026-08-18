@@ -8,7 +8,6 @@
     "build": "tsc -b && pnpm --filter @healthy-life/web build",
     "typecheck": "tsc -b",
     "test": "mkdir -p .tmp && TMPDIR=\"$PWD/.tmp\" vitest run",
-    "extract:prompts": "pnpm --filter @healthy-life/prompt-extract extract",
     "dev:server": "pnpm --filter @healthy-life/server dev",
     "dev:web": "pnpm --filter @healthy-life/web dev",
     "dev:jobs": "pnpm --filter @healthy-life/jobs dev"

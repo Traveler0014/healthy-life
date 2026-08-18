@@ -54,15 +54,11 @@
 2. **jobs 定时**：配置 `PROMPT_BUNDLE_URL` 后，每天 03:10 自动拉取导入（幂等：内容不变跳过）。
 3. **内置包 seed**：`prompts` 表为空时 server 启动自动导入 `CORE_BUNDLE`。
 
-## 五、内容供应链（AI 提取 → 人工审核 → 发布）
+## 五、提取维护（不在本仓库）
 
-```
-公开源（arXiv RSS 等，tools/prompt-extract/adapters.ts 内置清单）
-  → 每周一 02:00 UTC：GitHub Actions 抓素材 → LLM 构造谜题 → content/prompts/drafts/*.json
-  → 开 PR：人工审核（答案准确性、来源可溯、风格契约）→ status 改 published → 合并
-  → 手动触发 prompt-release workflow：校验 → 打 tag → GitHub Release 附 bundle.json
-  → 本项目：PROMPT_BUNDLE_URL 指向 release 产物，jobs 每日自动导入
-```
+**本仓库只定题目包规范与消费端导入能力；题目包的生成/审核/发布在独立的选题仓库或流程中维护**（例如：抓科普源 → AI 构造候选 → 人工审核 → 发布 release 产物）。产物只要符合本规范（`schemaVersion` 1 且通过 `validateBundle`），即可被本仓库导入：
 
-- 提取工具：`pnpm extract:prompts -- --source arxiv-math --limit 5`（需 `OPENAI_API_KEY`，兼容任意 OpenAI 格式端点）
-- 审核要点：LLM 只产候选，**发布权在人工**；`source` 必须能回溯原文
+1. **admin 后台**：粘贴 JSON（`bundleText`）或填发布产物 URL（`url`），手动导入
+2. **jobs 定时**：配置 `PROMPT_BUNDLE_URL` 后每天 03:10 自动拉取导入（幂等：内容不变跳过）
+
+外部仓库可参考的发布产物形态：单个 bundle JSON 文件（可置于任意静态托管 / GitHub Release），URL 供 admin 或 jobs 拉取。
